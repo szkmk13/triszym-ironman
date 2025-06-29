@@ -29,6 +29,8 @@ export type Athlete = {
   predicted_swim_time: string | null
   predicted_bike_time: string | null
   predicted_run_time: string | null
+  predicted_t1_time: string | null
+  predicted_t2_time: string | null
   template?: Template
 }
 
@@ -44,11 +46,12 @@ export const timeValidation = {
   swim: { min: 0, max: 150 }, // 0 to 2h30min in minutes
   bike: { min: 0, max: 480 }, // 0 to 8h in minutes
   run: { min: 0, max: 300 }, // 0 to 5h in minutes
+  transition: { min: 0, max: 30 }, // 0 to 30min for transitions
 }
 
 export function validateTimeInput(
   timeString: string,
-  discipline: "swim" | "bike" | "run",
+  discipline: "swim" | "bike" | "run" | "transition",
 ): { isValid: boolean; error?: string } {
   if (!timeString) return { isValid: true } // Allow empty times
 
@@ -145,4 +148,113 @@ export function parseTimeToSeconds(timeStr: string): number {
 
   const [hours, minutes, seconds] = formattedTime.split(":").map(Number)
   return hours * 3600 + minutes * 60 + (seconds || 0)
+}
+
+// Calculate predicted total time from individual components
+export function calculatePredictedTotalTime(athlete: Athlete): string {
+  if (
+    !athlete.predicted_swim_time ||
+    !athlete.predicted_bike_time ||
+    !athlete.predicted_run_time ||
+    !athlete.predicted_t1_time ||
+    !athlete.predicted_t2_time
+  ) {
+    return "--:--:--"
+  }
+
+  const swimSeconds = parseTimeToSeconds(athlete.predicted_swim_time)
+  const bikeSeconds = parseTimeToSeconds(athlete.predicted_bike_time)
+  const runSeconds = parseTimeToSeconds(athlete.predicted_run_time)
+  const t1Seconds = parseTimeToSeconds(athlete.predicted_t1_time)
+  const t2Seconds = parseTimeToSeconds(athlete.predicted_t2_time)
+
+  const totalSeconds = swimSeconds + bikeSeconds + runSeconds + t1Seconds + t2Seconds
+
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+}
+
+// Pace and speed calculation utilities
+export function calculateSwimPace(timeStr: string, distanceKm: number): string {
+  if (!timeStr || timeStr === "--:--:--" || !distanceKm) return "--:--"
+
+  const totalSeconds = parseTimeToSeconds(timeStr)
+  const totalMinutes = totalSeconds / 60
+  const distanceMeters = distanceKm * 1000
+  const paceMinsPer100m = (totalMinutes / distanceMeters) * 100
+
+  const minutes = Math.floor(paceMinsPer100m)
+  const seconds = Math.round((paceMinsPer100m - minutes) * 60)
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`
+}
+
+export function calculateBikeSpeed(timeStr: string, distanceKm: number): string {
+  if (!timeStr || timeStr === "--:--:--" || !distanceKm) return "--"
+
+  const totalSeconds = parseTimeToSeconds(timeStr)
+  const totalHours = totalSeconds / 3600
+  const speed = distanceKm / totalHours
+
+  return speed.toFixed(1)
+}
+
+export function calculateRunPace(timeStr: string, distanceKm: number): string {
+  if (!timeStr || timeStr === "--:--:--" || !distanceKm) return "--:--"
+
+  const totalSeconds = parseTimeToSeconds(timeStr)
+  const totalMinutes = totalSeconds / 60
+  const paceMinutesPerKm = totalMinutes / distanceKm
+
+  const minutes = Math.floor(paceMinutesPerKm)
+  const seconds = Math.round((paceMinutesPerKm - minutes) * 60)
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`
+}
+
+// Calculate pace for checkpoints based on their type and distance
+export function calculateCheckpointPace(timeStr: string, distanceKm: number, checkpointType: string): string {
+  if (!timeStr || timeStr === "--:--:--" || !distanceKm) return ""
+
+  switch (checkpointType) {
+    case "swim_start":
+    case "swim_finish":
+      return `(${calculateSwimPace(timeStr, distanceKm)}/100m)`
+    case "bike_checkpoint":
+      return `(${calculateBikeSpeed(timeStr, distanceKm)} km/h)`
+    case "run_checkpoint":
+    case "finish":
+      // For run checkpoints, we need to calculate pace based on run distance only
+      return `(${calculateRunPace(timeStr, distanceKm)}/km)`
+    case "t1_finish":
+    case "t2_finish":
+      return "" // No pace for transitions
+    default:
+      return ""
+  }
+}
+
+// Get cumulative distance up to a checkpoint
+export function getCumulativeDistance(checkpoint: TemplateCheckpoint, template: Template): number {
+  switch (checkpoint.checkpoint_type) {
+    case "swim_start":
+      return 0
+    case "swim_finish":
+      return template.swim_distance
+    case "t1_finish":
+      return template.swim_distance
+    case "bike_checkpoint":
+      return template.swim_distance + (checkpoint.distance_km || 0)
+    case "t2_finish":
+      return template.swim_distance + template.bike_distance
+    case "run_checkpoint":
+      return template.swim_distance + template.bike_distance + (checkpoint.distance_km || 0)
+    case "finish":
+      return template.swim_distance + template.bike_distance + template.run_distance
+    default:
+      return 0
+  }
 }
