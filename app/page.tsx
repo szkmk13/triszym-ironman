@@ -1,103 +1,133 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { useState, useEffect } from "react"
+import { AthleteForm } from "@/components/athlete-form"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { supabase, type Athlete } from "@/lib/supabase"
+import { toast } from "sonner"
+import { Users, Trophy, Clock, Settings } from "lucide-react"
+import { AthleteListItem } from "@/components/athlete-list-item"
+import Link from "next/link"
+
+export default function TriathlonCalculator() {
+  const [athletes, setAthletes] = useState<Athlete[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchAthletes()
+  }, [])
+
+  const fetchAthletes = async () => {
+    setLoading(true)
+    const { data, error } = await supabase
+      .from("athletes")
+      .select(`
+        *,
+        template:templates(*)
+      `)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch athletes",
+        variant: "destructive",
+      })
+    } else {
+      setAthletes(data || [])
+    }
+    setLoading(false)
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold flex items-center justify-center gap-2">
+            <Trophy className="h-8 w-8" />
+            Triathlon Calculator
+          </h1>
+          <p className="text-gray-600">Track your athletes' progress during triathlon races</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <Link href="/admin">
+          <Button variant="outline" size="sm">
+            <Settings className="h-4 w-4 mr-2" />
+            Admin
+          </Button>
+        </Link>
+      </div>
+
+      <Tabs defaultValue="tracker" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="tracker" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Race Tracker
+          </TabsTrigger>
+          <TabsTrigger value="manage" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Manage Athletes
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tracker" className="space-y-6">
+          {loading ? (
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">Loading athletes...</div>
+              </CardContent>
+            </Card>
+          ) : athletes.length === 0 ? (
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center space-y-2">
+                  <Users className="h-12 w-12 mx-auto text-gray-400" />
+                  <h3 className="text-lg font-semibold">No Athletes Added</h3>
+                  <p className="text-gray-600">Add athletes in the "Manage Athletes" tab to start tracking</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Race Tracker</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {athletes.map((athlete) => (
+                    <AthleteListItem key={athlete.id} athlete={athlete} />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="manage" className="space-y-6">
+          <AthleteForm onAthleteAdded={fetchAthletes} />
+
+          {athletes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Registered Athletes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {athletes.map((athlete) => (
+                    <div key={athlete.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium">{athlete.name}</div>
+                        <div className="text-sm text-gray-500">Template: {athlete.template?.name}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
-  );
+  )
 }
