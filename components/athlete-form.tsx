@@ -2,52 +2,45 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { supabase, type Template, validateTimeInput } from "@/lib/supabase"
+import { validateTimeInput, calculatePredictedTotalTime } from "@/lib/supabase"
 import { toast } from "sonner"
+import { useTemplates, useCreateAthlete } from "@/lib/queries"
 
-interface AthleteFormProps {
-  onAthleteAdded: () => void
-}
+export function AthleteForm() {
+  const { data: templates = [] } = useTemplates()
+  const createAthleteMutation = useCreateAthlete()
 
-export function AthleteForm({ onAthleteAdded }: AthleteFormProps) {
-  const [templates, setTemplates] = useState<Template[]>([])
   const [formData, setFormData] = useState({
     name: "",
     templateId: "",
     predictedSwimTime: "",
     predictedBikeTime: "",
     predictedRunTime: "",
+    predictedT1Time: "",
+    predictedT2Time: "",
   })
-  const [loading, setLoading] = useState(false)
   const [validationErrors, setValidationErrors] = useState({
     swim: "",
     bike: "",
     run: "",
+    t1: "",
+    t2: "",
   })
 
-  useEffect(() => {
-    fetchTemplates()
-  }, [])
-
-  const fetchTemplates = async () => {
-    const { data, error } = await supabase.from("templates").select("*").order("name")
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch templates",
-        variant: "destructive",
-      })
-    } else {
-      setTemplates(data || [])
-    }
-  }
+  // Calculate predicted total time
+  const predictedTotalTime = calculatePredictedTotalTime({
+    predicted_swim_time: formData.predictedSwimTime,
+    predicted_bike_time: formData.predictedBikeTime,
+    predicted_run_time: formData.predictedRunTime,
+    predicted_t1_time: formData.predictedT1Time,
+    predicted_t2_time: formData.predictedT2Time,
+  } as any)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,8 +56,14 @@ export function AthleteForm({ onAthleteAdded }: AthleteFormProps) {
       return
     }
 
-    // Check for required predicted times
-    if (!formData.predictedSwimTime || !formData.predictedBikeTime || !formData.predictedRunTime) {
+    // Check for required predicted times (all are now required)
+    if (
+      !formData.predictedSwimTime ||
+      !formData.predictedBikeTime ||
+      !formData.predictedRunTime ||
+      !formData.predictedT1Time ||
+      !formData.predictedT2Time
+    ) {
       toast({
         title: "Validation Error",
         description: "All predicted times are required",
@@ -73,10 +72,8 @@ export function AthleteForm({ onAthleteAdded }: AthleteFormProps) {
       return
     }
 
-    setLoading(true)
-
     try {
-      // In the handleSubmit function, before inserting to database, format the times:
+      // Format times for database
       const formatTimeForDatabase = (timeStr: string): string | null => {
         if (!timeStr) return null
         // Ensure format is HH:MM:SS
@@ -89,15 +86,15 @@ export function AthleteForm({ onAthleteAdded }: AthleteFormProps) {
         return timeStr
       }
 
-      const { error } = await supabase.from("athletes").insert({
+      await createAthleteMutation.mutateAsync({
         name: formData.name,
         template_id: Number.parseInt(formData.templateId),
         predicted_swim_time: formatTimeForDatabase(formData.predictedSwimTime),
         predicted_bike_time: formatTimeForDatabase(formData.predictedBikeTime),
         predicted_run_time: formatTimeForDatabase(formData.predictedRunTime),
+        predicted_t1_time: formatTimeForDatabase(formData.predictedT1Time),
+        predicted_t2_time: formatTimeForDatabase(formData.predictedT2Time),
       })
-
-      if (error) throw error
 
       toast({
         title: "Success",
@@ -110,18 +107,17 @@ export function AthleteForm({ onAthleteAdded }: AthleteFormProps) {
         predictedSwimTime: "",
         predictedBikeTime: "",
         predictedRunTime: "",
+        predictedT1Time: "",
+        predictedT2Time: "",
       })
 
-      setValidationErrors({ swim: "", bike: "", run: "" })
-      onAthleteAdded()
+      setValidationErrors({ swim: "", bike: "", run: "", t1: "", t2: "" })
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to add athlete",
         variant: "destructive",
       })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -221,8 +217,59 @@ export function AthleteForm({ onAthleteAdded }: AthleteFormProps) {
             </div>
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Adding..." : "Add Athlete"}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="predictedT1Time">Predicted T1 Time (HH:MM:SS) *</Label>
+              <Input
+                id="predictedT1Time"
+                placeholder="00:05:00"
+                value={formData.predictedT1Time}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setFormData({ ...formData, predictedT1Time: value })
+
+                  const validation = validateTimeInput(value, "transition")
+                  setValidationErrors((prev) => ({ ...prev, t1: validation.error || "" }))
+                }}
+                required
+              />
+              {validationErrors.t1 && <p className="text-sm text-red-600 mt-1">{validationErrors.t1}</p>}
+              <p className="text-xs text-gray-500 mt-1">Maximum: 30:00 (Required)</p>
+            </div>
+
+            <div>
+              <Label htmlFor="predictedT2Time">Predicted T2 Time (HH:MM:SS) *</Label>
+              <Input
+                id="predictedT2Time"
+                placeholder="00:03:00"
+                value={formData.predictedT2Time}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setFormData({ ...formData, predictedT2Time: value })
+
+                  const validation = validateTimeInput(value, "transition")
+                  setValidationErrors((prev) => ({ ...prev, t2: validation.error || "" }))
+                }}
+                required
+              />
+              {validationErrors.t2 && <p className="text-sm text-red-600 mt-1">{validationErrors.t2}</p>}
+              <p className="text-xs text-gray-500 mt-1">Maximum: 30:00 (Required)</p>
+            </div>
+          </div>
+
+          {/* Calculated Total Time Display */}
+          {predictedTotalTime !== "--:--:--" && (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="text-center">
+                <Label className="text-sm font-medium text-gray-700">Predicted Total Time</Label>
+                <div className="text-2xl font-bold text-gray-900 mt-1">{predictedTotalTime}</div>
+                <p className="text-xs text-gray-500 mt-1">Automatically calculated from all components</p>
+              </div>
+            </div>
+          )}
+
+          <Button type="submit" disabled={createAthleteMutation.isPending} className="w-full">
+            {createAthleteMutation.isPending ? "Adding..." : "Add Athlete"}
           </Button>
         </form>
       </CardContent>

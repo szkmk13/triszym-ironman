@@ -15,7 +15,7 @@ import {
   calculateCheckpointPace,
   calculatePredictedTotalTime,
 } from "@/lib/supabase"
-import { toast } from "sonner"
+
 import { ArrowLeft, Clock, CheckCircle, Trophy, MapPin, Play } from "lucide-react"
 import { useAthlete, useCheckpoints, useAthleteTimes, useRecordTime } from "@/lib/queries"
 
@@ -33,22 +33,12 @@ export default function AthleteDetailPage() {
 
   const recordTime = async (checkpointId: number) => {
     if (!currentTime) {
-      toast({
-        title: "Error",
-        description: "Please enter a time",
-        variant: "destructive",
-      })
       return
     }
 
     // Validate time format
     const timeRegex = /^(\d{1,2}):(\d{2}):(\d{2})$/
     if (!timeRegex.test(currentTime)) {
-      toast({
-        title: "Error",
-        description: "Please enter time in HH:MM:SS format",
-        variant: "destructive",
-      })
       return
     }
 
@@ -64,18 +54,9 @@ export default function AthleteDetailPage() {
         actual_time: timestamp.toISOString(),
       })
 
-      toast({
-        title: "Success",
-        description: "Time recorded successfully",
-      })
-
       setCurrentTime("")
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to record time",
-        variant: "destructive",
-      })
+      console.log(error)
     }
   }
 
@@ -151,6 +132,67 @@ export default function AthleteDetailPage() {
     return "text-gray-600" // Exactly on time
   }
 
+  // Helper function to get estimated finish time
+  const getEstimatedFinishTime = () => {
+    const swimStartTime = getSwimStartTime()
+    if (!swimStartTime || !athlete) return null
+
+    const finishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "finish")
+    const finishTime = finishCheckpoint ? getCheckpointTime(finishCheckpoint.id) : null
+    
+    if (finishTime) return null // Already finished
+
+    const predictedTotalSeconds = parseTimeToSeconds(calculatePredictedTotalTime(athlete))
+    if (predictedTotalSeconds === 0) return null
+
+    const startTime = new Date(swimStartTime.actual_time)
+    const estimatedFinishTime = new Date(startTime.getTime() + predictedTotalSeconds * 1000)
+    
+    return estimatedFinishTime.toLocaleTimeString()
+  }
+
+  // Helper function to get the last checkpoint for bike/run segments
+  const getLastCheckpointForSegment = (checkpointType: string, currentCheckpoint: any) => {
+    if (checkpointType === "swim_finish") {
+      const swimStartCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "swim_start")
+      return swimStartCheckpoint ? getCheckpointTime(swimStartCheckpoint.id) : null
+    }
+    
+    if (checkpointType === "bike_checkpoint") {
+      // Find the previous checkpoint in the bike segment
+      const bikeCheckpoints = checkpoints
+        .filter((cp) => cp.checkpoint_type === "bike_checkpoint" || cp.checkpoint_type === "t1_finish")
+        .sort((a, b) => a.order_index - b.order_index)
+      
+      const currentIndex = bikeCheckpoints.findIndex((cp) => cp.id === currentCheckpoint.id)
+      if (currentIndex > 0) {
+        return getCheckpointTime(bikeCheckpoints[currentIndex - 1].id)
+      } else {
+        // First bike checkpoint, use T1 finish
+        const t1FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t1_finish")
+        return t1FinishCheckpoint ? getCheckpointTime(t1FinishCheckpoint.id) : null
+      }
+    }
+    
+    if (checkpointType === "run_checkpoint" || checkpointType === "finish") {
+      // Find the previous checkpoint in the run segment
+      const runCheckpoints = checkpoints
+        .filter((cp) => cp.checkpoint_type === "run_checkpoint" || cp.checkpoint_type === "t2_finish" || cp.checkpoint_type === "finish")
+        .sort((a, b) => a.order_index - b.order_index)
+      
+      const currentIndex = runCheckpoints.findIndex((cp) => cp.id === currentCheckpoint.id)
+      if (currentIndex > 0) {
+        return getCheckpointTime(runCheckpoints[currentIndex - 1].id)
+      } else {
+        // First run checkpoint, use T2 finish
+        const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish")
+        return t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
+      }
+    }
+    
+    return null
+  }
+
   if (athleteLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -169,6 +211,7 @@ export default function AthleteDetailPage() {
 
   const swimStartTime = getSwimStartTime()
   const predictedTotalTime = calculatePredictedTotalTime(athlete)
+  const estimatedFinishTime = getEstimatedFinishTime()
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -224,6 +267,9 @@ export default function AthleteDetailPage() {
                       swimFinishTime && swimStartTime
                         ? calculateElapsedTime(swimStartTime.actual_time, swimFinishTime.actual_time)
                         : null
+                    const totalTimeElapsed = swimFinishTime && swimStartTime 
+                      ? calculateElapsedTime(swimStartTime.actual_time, swimFinishTime.actual_time) 
+                      : null
 
                     return (
                       <>
@@ -235,6 +281,12 @@ export default function AthleteDetailPage() {
                               : "--:--:--"}
                           </span>
                         </div>
+                        {totalTimeElapsed && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-blue-700">Total Elapsed:</span>
+                            <span className="font-medium text-blue-600">{totalTimeElapsed}</span>
+                          </div>
+                        )}
                         {actualSwimTime && (
                           <div className="flex justify-between items-center pt-2 border-t border-blue-200">
                             <span className="text-sm text-blue-700">Difference:</span>
@@ -242,52 +294,6 @@ export default function AthleteDetailPage() {
                               className={`font-bold ${getTimeDifferenceColor(athlete.predicted_swim_time, actualSwimTime)}`}
                             >
                               {getTimeDifference(athlete.predicted_swim_time, actualSwimTime)}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {/* T1 Analysis */}
-            {athlete.predicted_t1_time && (
-              <div className="p-4 bg-yellow-50 rounded-lg">
-                <div className="text-center mb-3">
-                  <h3 className="font-semibold text-yellow-800">T1</h3>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-yellow-700">Predicted:</span>
-                    <span className="font-medium text-yellow-600">
-                      {formatTimeWithSeconds(athlete.predicted_t1_time)}
-                    </span>
-                  </div>
-                  {(() => {
-                    const swimFinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "swim_finish")
-                    const t1FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t1_finish")
-                    const swimFinishTime = swimFinishCheckpoint ? getCheckpointTime(swimFinishCheckpoint.id) : null
-                    const t1FinishTime = t1FinishCheckpoint ? getCheckpointTime(t1FinishCheckpoint.id) : null
-                    const actualT1Time =
-                      swimFinishTime && t1FinishTime
-                        ? calculateElapsedTime(swimFinishTime.actual_time, t1FinishTime.actual_time)
-                        : null
-
-                    return (
-                      <>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-yellow-700">Actual:</span>
-                          <span className="font-medium text-yellow-600">{actualT1Time || "--:--:--"}</span>
-                        </div>
-                        {actualT1Time && (
-                          <div className="flex justify-between items-center pt-2 border-t border-yellow-200">
-                            <span className="text-sm text-yellow-700">Difference:</span>
-                            <span
-                              className={`font-bold ${getTimeDifferenceColor(athlete.predicted_t1_time, actualT1Time)}`}
-                            >
-                              {getTimeDifference(athlete.predicted_t1_time, actualT1Time)}
                             </span>
                           </div>
                         )}
@@ -319,6 +325,9 @@ export default function AthleteDetailPage() {
                     const t2Time = t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
                     const actualBikeTime =
                       t1Time && t2Time ? calculateElapsedTime(t1Time.actual_time, t2Time.actual_time) : null
+                    const totalTimeElapsed = t2Time && swimStartTime 
+                      ? calculateElapsedTime(swimStartTime.actual_time, t2Time.actual_time) 
+                      : null
 
                     return (
                       <>
@@ -330,6 +339,12 @@ export default function AthleteDetailPage() {
                               : "--:--:--"}
                           </span>
                         </div>
+                        {totalTimeElapsed && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-orange-700">Total Elapsed:</span>
+                            <span className="font-medium text-orange-600">{totalTimeElapsed}</span>
+                          </div>
+                        )}
                         {actualBikeTime && (
                           <div className="flex justify-between items-center pt-2 border-t border-orange-200">
                             <span className="text-sm text-orange-700">Difference:</span>
@@ -337,57 +352,6 @@ export default function AthleteDetailPage() {
                               className={`font-bold ${getTimeDifferenceColor(athlete.predicted_bike_time, actualBikeTime)}`}
                             >
                               {getTimeDifference(athlete.predicted_bike_time, actualBikeTime)}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
-            )}
-
-            {/* T2 Analysis */}
-            {athlete.predicted_t2_time && (
-              <div className="p-4 bg-yellow-50 rounded-lg">
-                <div className="text-center mb-3">
-                  <h3 className="font-semibold text-yellow-800">T2</h3>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-yellow-700">Predicted:</span>
-                    <span className="font-medium text-yellow-600">
-                      {formatTimeWithSeconds(athlete.predicted_t2_time)}
-                    </span>
-                  </div>
-                  {(() => {
-                    const bikeFinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish")
-                    const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish")
-                    // For T2, we need to find the last bike checkpoint or use bike distance
-                    const lastBikeCheckpoint = checkpoints
-                      .filter((cp) => cp.checkpoint_type === "bike_checkpoint")
-                      .sort((a, b) => b.order_index - a.order_index)[0]
-
-                    const bikeEndTime = lastBikeCheckpoint ? getCheckpointTime(lastBikeCheckpoint.id) : null
-                    const t2FinishTime = t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
-                    const actualT2Time =
-                      bikeEndTime && t2FinishTime
-                        ? calculateElapsedTime(bikeEndTime.actual_time, t2FinishTime.actual_time)
-                        : null
-
-                    return (
-                      <>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-yellow-700">Actual:</span>
-                          <span className="font-medium text-yellow-600">{actualT2Time || "--:--:--"}</span>
-                        </div>
-                        {actualT2Time && (
-                          <div className="flex justify-between items-center pt-2 border-t border-yellow-200">
-                            <span className="text-sm text-yellow-700">Difference:</span>
-                            <span
-                              className={`font-bold ${getTimeDifferenceColor(athlete.predicted_t2_time, actualT2Time)}`}
-                            >
-                              {getTimeDifference(athlete.predicted_t2_time, actualT2Time)}
                             </span>
                           </div>
                         )}
@@ -419,6 +383,9 @@ export default function AthleteDetailPage() {
                     const finishTime = finishCheckpoint ? getCheckpointTime(finishCheckpoint.id) : null
                     const actualRunTime =
                       t2Time && finishTime ? calculateElapsedTime(t2Time.actual_time, finishTime.actual_time) : null
+                    const totalTimeElapsed = finishTime && swimStartTime 
+                      ? calculateElapsedTime(swimStartTime.actual_time, finishTime.actual_time) 
+                      : null
 
                     return (
                       <>
@@ -430,6 +397,12 @@ export default function AthleteDetailPage() {
                               : "--:--:--"}
                           </span>
                         </div>
+                        {totalTimeElapsed && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-red-700">Total Elapsed:</span>
+                            <span className="font-medium text-red-600">{totalTimeElapsed}</span>
+                          </div>
+                        )}
                         {actualRunTime && (
                           <div className="flex justify-between items-center pt-2 border-t border-red-200">
                             <span className="text-sm text-red-700">Difference:</span>
@@ -456,7 +429,14 @@ export default function AthleteDetailPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-700">Predicted:</span>
-                    <span className="font-medium text-gray-600">{predictedTotalTime}</span>
+                    <span className="font-medium text-gray-600">
+                      {predictedTotalTime}
+                      {estimatedFinishTime && (
+                        <span className="text-xs text-gray-500 ml-1">
+                          (Est. finish: {estimatedFinishTime})
+                        </span>
+                      )}
+                    </span>
                   </div>
                   {(() => {
                     const finishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "finish")
@@ -534,7 +514,7 @@ export default function AthleteDetailPage() {
               const isCompleted = !!time
               const elapsedTime = time ? getElapsedTime(time.actual_time) : "--:--:--"
 
-              // Calculate pace for this checkpoint
+              // Calculate pace for this checkpoint using the last checkpoint
               let paceInfo = ""
               if (time && athlete.template) {
                 if (checkpoint.checkpoint_type === "swim_finish") {
@@ -544,15 +524,56 @@ export default function AthleteDetailPage() {
                     checkpoint.checkpoint_type,
                   )
                 } else if (checkpoint.checkpoint_type === "bike_checkpoint" && checkpoint.distance_km) {
-                  paceInfo = calculateCheckpointPace(elapsedTime, checkpoint.distance_km, checkpoint.checkpoint_type)
-                } else if (checkpoint.checkpoint_type === "run_checkpoint" && checkpoint.distance_km) {
-                  paceInfo = calculateCheckpointPace(elapsedTime, checkpoint.distance_km, checkpoint.checkpoint_type)
-                } else if (checkpoint.checkpoint_type === "finish") {
-                  paceInfo = calculateCheckpointPace(
-                    elapsedTime,
-                    athlete.template.run_distance,
-                    checkpoint.checkpoint_type,
-                  )
+                  // Calculate elapsed time from last checkpoint for bike segments
+                  const lastCheckpointTime = getLastCheckpointForSegment("bike_checkpoint", checkpoint)
+                  if (lastCheckpointTime) {
+                    const segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
+                    
+                    // Calculate distance from last checkpoint
+                    const bikeCheckpoints = checkpoints
+                      .filter((cp) => cp.checkpoint_type === "bike_checkpoint" || cp.checkpoint_type === "t1_finish")
+                      .sort((a, b) => a.order_index - b.order_index)
+                    
+                    const currentIndex = bikeCheckpoints.findIndex((cp) => cp.id === checkpoint.id)
+                    const previousDistance = currentIndex > 0 && bikeCheckpoints[currentIndex - 1].distance_km 
+                      ? bikeCheckpoints[currentIndex - 1].distance_km 
+                      : 0
+                    
+                    const segmentDistance = checkpoint.distance_km - previousDistance
+                    paceInfo = calculateCheckpointPace(segmentElapsedTime, segmentDistance, checkpoint.checkpoint_type)
+                  } else {
+                    paceInfo = calculateCheckpointPace(elapsedTime, checkpoint.distance_km, checkpoint.checkpoint_type)
+                  }
+                } else if ((checkpoint.checkpoint_type === "run_checkpoint" || checkpoint.checkpoint_type === "finish") && checkpoint.distance_km) {
+                  // Calculate elapsed time from last checkpoint for run segments
+                  const lastCheckpointTime = getLastCheckpointForSegment(checkpoint.checkpoint_type, checkpoint)
+                  if (lastCheckpointTime) {
+                    const segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
+                    
+                    // Calculate distance from last checkpoint
+                    const runCheckpoints = checkpoints
+                      .filter((cp) => cp.checkpoint_type === "run_checkpoint" || cp.checkpoint_type === "t2_finish" || cp.checkpoint_type === "finish")
+                      .sort((a, b) => a.order_index - b.order_index)
+                    
+                    const currentIndex = runCheckpoints.findIndex((cp) => cp.id === checkpoint.id)
+                    const previousDistance = currentIndex > 0 && runCheckpoints[currentIndex - 1].distance_km 
+                      ? runCheckpoints[currentIndex - 1].distance_km 
+                      : 0
+                    
+                    const segmentDistance = checkpoint.checkpoint_type === "finish" 
+                      ? athlete.template.run_distance - previousDistance
+                      : checkpoint.distance_km - previousDistance
+                      
+                    paceInfo = calculateCheckpointPace(segmentElapsedTime, segmentDistance, checkpoint.checkpoint_type)
+                  } else if (checkpoint.checkpoint_type === "finish") {
+                    paceInfo = calculateCheckpointPace(
+                      elapsedTime,
+                      athlete.template.run_distance,
+                      checkpoint.checkpoint_type,
+                    )
+                  } else {
+                    paceInfo = calculateCheckpointPace(elapsedTime, checkpoint.distance_km, checkpoint.checkpoint_type)
+                  }
                 }
               }
 

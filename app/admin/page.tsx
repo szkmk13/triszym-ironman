@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { Lock, Plus, Edit, Trash2, Save, X, Settings } from "lucide-react"
 
 export default function AdminPage() {
+  const passwordCheck = process.env.NEXT_PUBLIC_ADMIN_PASSWORD
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState("")
   const [templates, setTemplates] = useState<Template[]>([])
@@ -46,7 +47,7 @@ export default function AdminPage() {
 
     // In a real app, you'd verify this on the server side
     // For now, we'll check against the environment variable on the client
-    if (password === "triathlon2024") {
+    if (password === passwordCheck) {
       setIsAuthenticated(true)
       toast({
         title: "Success",
