@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { supabase, type Template, type TemplateCheckpoint } from "@/lib/supabase"
 import { toast } from "sonner"
@@ -27,13 +26,6 @@ export default function AdminPage() {
     bike_distance: 40,
     run_distance: 10,
   })
-  const [newCheckpoint, setNewCheckpoint] = useState({
-    template_id: 0,
-    checkpoint_type: "swim_start",
-    name: "",
-    distance_km: 0,
-    order_index: 1,
-  })
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -49,16 +41,9 @@ export default function AdminPage() {
     // For now, we'll check against the environment variable on the client
     if (password === passwordCheck) {
       setIsAuthenticated(true)
-      toast({
-        title: "Success",
-        description: "Access granted",
-      })
+      toast.success("Access granted")
     } else {
-      toast({
-        title: "Error",
-        description: "Invalid password",
-        variant: "destructive",
-      })
+      toast.error("Invalid password")
     }
   }
 
@@ -67,11 +52,7 @@ export default function AdminPage() {
     const { data, error } = await supabase.from("templates").select("*").order("name")
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch templates",
-        variant: "destructive",
-      })
+      toast.error("Failed to fetch templates")
     } else {
       setTemplates(data || [])
       // Fetch checkpoints for each template
@@ -101,14 +82,14 @@ export default function AdminPage() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.from("templates").insert(newTemplate)
+      const { data, error } = await supabase
+        .from("templates")
+        .insert(newTemplate)
+        .select()
 
       if (error) throw error
 
-      toast({
-        title: "Success",
-        description: "Template created successfully",
-      })
+      toast.success("Template created successfully")
 
       setNewTemplate({
         name: "",
@@ -117,13 +98,10 @@ export default function AdminPage() {
         run_distance: 10,
       })
 
-      fetchTemplates()
+      await fetchTemplates()
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create template",
-        variant: "destructive",
-      })
+      console.error("Error creating template:", error)
+      toast.error("Failed to create template")
     } finally {
       setLoading(false)
     }
@@ -133,7 +111,7 @@ export default function AdminPage() {
     setLoading(true)
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("templates")
         .update({
           name: template.name,
@@ -142,22 +120,16 @@ export default function AdminPage() {
           run_distance: template.run_distance,
         })
         .eq("id", template.id)
+        .select()
 
       if (error) throw error
 
-      toast({
-        title: "Success",
-        description: "Template updated successfully",
-      })
+      toast.success("Template updated successfully")
 
-      setEditingTemplate(null)
-      fetchTemplates()
+      await fetchTemplates()
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update template",
-        variant: "destructive",
-      })
+      console.error("Error updating template:", error)
+      toast.error("Failed to update template")
     } finally {
       setLoading(false)
     }
@@ -175,56 +147,46 @@ export default function AdminPage() {
     setLoading(true)
 
     try {
-      const { error } = await supabase.from("templates").delete().eq("id", templateId)
+      const { data, error } = await supabase
+        .from("templates")
+        .delete()
+        .eq("id", templateId)
+        .select()
 
       if (error) throw error
 
-      toast({
-        title: "Success",
-        description: "Template deleted successfully",
-      })
+      toast.success("Template deleted successfully")
 
-      fetchTemplates()
+      setEditingTemplate(null)
+      await fetchTemplates()
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete template",
-        variant: "destructive",
-      })
+      console.error("Error deleting template:", error)
+      toast.error("Failed to delete template")
     } finally {
       setLoading(false)
     }
   }
 
-  const createCheckpoint = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const createCheckpoint = async (templateId: number, checkpointData: any) => {
     setLoading(true)
 
     try {
-      const { error } = await supabase.from("template_checkpoints").insert(newCheckpoint)
+      const { data, error } = await supabase.from("template_checkpoints").insert({
+        template_id: templateId,
+        checkpoint_type: checkpointData.checkpoint_type,
+        name: checkpointData.name,
+        distance_km: checkpointData.distance_km || null,
+        order_index: checkpointData.order_index,
+      }).select()
 
       if (error) throw error
 
-      toast({
-        title: "Success",
-        description: "Checkpoint created successfully",
-      })
+      toast.success("Checkpoint created successfully")
 
-      setNewCheckpoint({
-        template_id: 0,
-        checkpoint_type: "swim_start",
-        name: "",
-        distance_km: 0,
-        order_index: 1,
-      })
-
-      fetchCheckpoints(newCheckpoint.template_id)
+      await fetchCheckpoints(templateId)
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create checkpoint",
-        variant: "destructive",
-      })
+      console.error("Error creating checkpoint:", error)
+      toast.error("Failed to create checkpoint")
     } finally {
       setLoading(false)
     }
@@ -234,31 +196,26 @@ export default function AdminPage() {
     setLoading(true)
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("template_checkpoints")
         .update({
           checkpoint_type: checkpoint.checkpoint_type,
           name: checkpoint.name,
-          distance_km: checkpoint.distance_km,
+          distance_km: checkpoint.distance_km || null,
           order_index: checkpoint.order_index,
         })
         .eq("id", checkpoint.id)
+        .select()
 
       if (error) throw error
 
-      toast({
-        title: "Success",
-        description: "Checkpoint updated successfully",
-      })
+      toast.success("Checkpoint updated successfully")
 
       setEditingCheckpoint(null)
-      fetchCheckpoints(checkpoint.template_id)
+      await fetchCheckpoints(checkpoint.template_id)
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update checkpoint",
-        variant: "destructive",
-      })
+      console.error("Error updating checkpoint:", error)
+      toast.error("Failed to update checkpoint")
     } finally {
       setLoading(false)
     }
@@ -270,24 +227,21 @@ export default function AdminPage() {
     }
 
     setLoading(true)
-
     try {
-      const { error } = await supabase.from("template_checkpoints").delete().eq("id", checkpointId)
+      const { data, error } = await supabase
+        .from("template_checkpoints")
+        .delete()
+        .eq("id", checkpointId)
+        .select()
 
       if (error) throw error
 
-      toast({
-        title: "Success",
-        description: "Checkpoint deleted successfully",
-      })
+      toast.success("Checkpoint deleted successfully")
 
-      fetchCheckpoints(templateId)
+      await fetchCheckpoints(templateId)
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete checkpoint",
-        variant: "destructive",
-      })
+      console.error("Error deleting checkpoint:", error)
+      toast.error("Failed to delete checkpoint")
     } finally {
       setLoading(false)
     }
@@ -309,6 +263,162 @@ export default function AdminPage() {
       default:
         return "bg-gray-100 text-gray-800"
     }
+  }
+
+  const formatCheckpointTypeName = (type: string) => {
+    return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+  }
+
+  // Helper function to get available checkpoint types
+  const getAvailableCheckpointTypes = (templateId: number, excludeCheckpointId?: number) => {
+    const allTypes = [
+      { value: "swim_start", label: "Swim Start" },
+      { value: "swim_finish", label: "Swim Finish" },
+      { value: "t1_finish", label: "T1 Finish" },
+      { value: "bike_checkpoint", label: "Bike Checkpoint" },
+      { value: "t2_finish", label: "T2 Finish" },
+      { value: "run_checkpoint", label: "Run Checkpoint" },
+      { value: "finish", label: "Finish" }
+    ];
+
+    // Get existing checkpoint types for this template
+    const existingTypes = (checkpoints[templateId] || [])
+      .filter(cp => cp.id !== excludeCheckpointId) // Exclude current checkpoint when editing
+      .map(cp => cp.checkpoint_type);
+
+    // Types that should be unique (only one allowed per template)
+    const uniqueTypes = ["swim_start", "swim_finish", "t1_finish", "t2_finish", "finish"];
+
+    // Filter out types that already exist and should be unique
+    return allTypes.filter(type => {
+      if (uniqueTypes.includes(type.value)) {
+        return !existingTypes.includes(type.value);
+      }
+      return true; // Allow multiple bike_checkpoint and run_checkpoint
+    });
+  };
+
+  const CheckpointForm = ({ templateId, onSubmit, onCancel }: { templateId: number, onSubmit: (data: any) => void, onCancel?: () => void }) => {
+    const availableTypes = getAvailableCheckpointTypes(templateId);
+    const defaultType = availableTypes.length > 0 ? availableTypes[0].value : "bike_checkpoint";
+    
+    const [formData, setFormData] = useState({
+      checkpoint_type: defaultType,
+      name: availableTypes.length > 0 ? availableTypes[0].label : "Bike Checkpoint",
+      distance_km: 0,
+      order_index: (checkpoints[templateId]?.length || 0) + 1,
+    });
+
+    // Update form data when available types change
+    useEffect(() => {
+      const newAvailableTypes = getAvailableCheckpointTypes(templateId);
+      if (newAvailableTypes.length > 0 && !newAvailableTypes.some(type => type.value === formData.checkpoint_type)) {
+        const newDefaultType = newAvailableTypes[0];
+        setFormData(prev => ({
+          ...prev,
+          checkpoint_type: newDefaultType.value,
+          name: newDefaultType.label
+        }));
+      }
+    }, [checkpoints[templateId]]);
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault()
+      onSubmit(formData)
+      
+      // Reset form with next available type
+      const newAvailableTypes = getAvailableCheckpointTypes(templateId);
+      const newDefaultType = newAvailableTypes.length > 0 ? newAvailableTypes[0].value : "bike_checkpoint";
+      
+      setFormData({
+        checkpoint_type: newDefaultType,
+        name: newAvailableTypes.length > 0 ? newAvailableTypes[0].label : "Bike Checkpoint",
+        distance_km: 0,
+        order_index: (checkpoints[templateId]?.length || 0) + 2,
+      })
+    }
+
+    const handleCheckpointTypeChange = (newType: string) => {
+      const selectedType = availableTypes.find(type => type.value === newType);
+      setFormData({
+        ...formData,
+        checkpoint_type: newType,
+        name: selectedType ? selectedType.label : formatCheckpointTypeName(newType)
+      })
+    }
+
+    // Don't show form if no types are available
+    if (availableTypes.length === 0) {
+      return (
+        <div className="p-4 border rounded-lg bg-gray-50 text-center text-gray-500">
+          All checkpoint types have been added to this template.
+        </div>
+      );
+    }
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4 p-4 border rounded-lg bg-gray-50">
+        <h4 className="font-medium text-sm">Add New Checkpoint</h4>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <Label htmlFor="checkpointType">Type</Label>
+            <select
+              id="checkpointType"
+              className="w-full p-2 border rounded-md"
+              value={formData.checkpoint_type}
+              onChange={(e) => handleCheckpointTypeChange(e.target.value)}
+              required
+            >
+              {availableTypes.map(type => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="checkpointName">Name</Label>
+            <Input
+              id="checkpointName"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="checkpointDistance">Distance (km)</Label>
+            <Input
+              id="checkpointDistance"
+              type="number"
+              step="0.1"
+              value={formData.distance_km}
+              onChange={(e) => setFormData({ ...formData, distance_km: Number.parseFloat(e.target.value) })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="checkpointOrder">Order</Label>
+            <Input
+              id="checkpointOrder"
+              type="number"
+              value={formData.order_index}
+              onChange={(e) => setFormData({ ...formData, order_index: Number.parseInt(e.target.value) })}
+              required
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button type="submit" size="sm" disabled={loading}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Checkpoint
+          </Button>
+          {onCancel && (
+            <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+        </div>
+      </form>
+    )
   }
 
   if (!isAuthenticated) {
@@ -355,364 +465,286 @@ export default function AdminPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="templates" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="checkpoints">Checkpoints</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="templates" className="space-y-6">
-          {/* Create New Template */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Create New Template
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={createTemplate} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <Label htmlFor="templateName">Template Name</Label>
-                    <Input
-                      id="templateName"
-                      value={newTemplate.name}
-                      onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="swimDistance">Swim Distance (km)</Label>
-                    <Input
-                      id="swimDistance"
-                      type="number"
-                      step="0.1"
-                      value={newTemplate.swim_distance}
-                      onChange={(e) =>
-                        setNewTemplate({ ...newTemplate, swim_distance: Number.parseFloat(e.target.value) })
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="bikeDistance">Bike Distance (km)</Label>
-                    <Input
-                      id="bikeDistance"
-                      type="number"
-                      step="0.1"
-                      value={newTemplate.bike_distance}
-                      onChange={(e) =>
-                        setNewTemplate({ ...newTemplate, bike_distance: Number.parseFloat(e.target.value) })
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="runDistance">Run Distance (km)</Label>
-                    <Input
-                      id="runDistance"
-                      type="number"
-                      step="0.1"
-                      value={newTemplate.run_distance}
-                      onChange={(e) =>
-                        setNewTemplate({ ...newTemplate, run_distance: Number.parseFloat(e.target.value) })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-                <Button type="submit" disabled={loading}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Template
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Existing Templates */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Templates</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {templates.map((template) => (
-                  <div key={template.id} className="border rounded-lg p-4">
-                    {editingTemplate?.id === template.id ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <Input
-                            value={editingTemplate.name}
-                            onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
-                          />
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={editingTemplate.swim_distance}
-                            onChange={(e) =>
-                              setEditingTemplate({
-                                ...editingTemplate,
-                                swim_distance: Number.parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={editingTemplate.bike_distance}
-                            onChange={(e) =>
-                              setEditingTemplate({
-                                ...editingTemplate,
-                                bike_distance: Number.parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                          <Input
-                            type="number"
-                            step="0.1"
-                            value={editingTemplate.run_distance}
-                            onChange={(e) =>
-                              setEditingTemplate({
-                                ...editingTemplate,
-                                run_distance: Number.parseFloat(e.target.value),
-                              })
-                            }
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => updateTemplate(editingTemplate)}>
-                            <Save className="h-4 w-4 mr-2" />
-                            Save
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingTemplate(null)}>
-                            <X className="h-4 w-4 mr-2" />
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{template.name}</h3>
-                          <p className="text-sm text-gray-600">
-                            Swim: {template.swim_distance}km • Bike: {template.bike_distance}km • Run:{" "}
-                            {template.run_distance}km
-                          </p>
-                          <p className="text-xs text-gray-500">Checkpoints: {checkpoints[template.id]?.length || 0}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" onClick={() => setEditingTemplate(template)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="destructive" onClick={() => deleteTemplate(template.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+      {/* Create New Template */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            Create New Template
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={createTemplate} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="templateName">Template Name</Label>
+                <Input
+                  id="templateName"
+                  value={newTemplate.name}
+                  onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+                  required
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <div>
+                <Label htmlFor="swimDistance">Swim Distance (km)</Label>
+                <Input
+                  id="swimDistance"
+                  type="number"
+                  step="0.1"
+                  value={newTemplate.swim_distance}
+                  onChange={(e) =>
+                    setNewTemplate({ ...newTemplate, swim_distance: Number.parseFloat(e.target.value) })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="bikeDistance">Bike Distance (km)</Label>
+                <Input
+                  id="bikeDistance"
+                  type="number"
+                  step="0.1"
+                  value={newTemplate.bike_distance}
+                  onChange={(e) =>
+                    setNewTemplate({ ...newTemplate, bike_distance: Number.parseFloat(e.target.value) })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="runDistance">Run Distance (km)</Label>
+                <Input
+                  id="runDistance"
+                  type="number"
+                  step="0.1"
+                  value={newTemplate.run_distance}
+                  onChange={(e) =>
+                    setNewTemplate({ ...newTemplate, run_distance: Number.parseFloat(e.target.value) })
+                  }
+                  required
+                />
+              </div>
+            </div>
+            <Button type="submit" disabled={loading}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Template
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="checkpoints" className="space-y-6">
-          {/* Create New Checkpoint */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Create New Checkpoint
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={createCheckpoint} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                  <div>
-                    <Label htmlFor="checkpointTemplate">Template</Label>
-                    <select
-                      id="checkpointTemplate"
-                      className="w-full p-2 border rounded-md"
-                      value={newCheckpoint.template_id}
-                      onChange={(e) =>
-                        setNewCheckpoint({ ...newCheckpoint, template_id: Number.parseInt(e.target.value) })
-                      }
-                      required
-                    >
-                      <option value={0}>Select Template</option>
-                      {templates.map((template) => (
-                        <option key={template.id} value={template.id}>
-                          {template.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="checkpointType">Type</Label>
-                    <select
-                      id="checkpointType"
-                      className="w-full p-2 border rounded-md"
-                      value={newCheckpoint.checkpoint_type}
-                      onChange={(e) => setNewCheckpoint({ ...newCheckpoint, checkpoint_type: e.target.value })}
-                      required
-                    >
-                      <option value="swim_start">Swim Start</option>
-                      <option value="swim_finish">Swim Finish</option>
-                      <option value="t1_finish">T1 Finish</option>
-                      <option value="bike_checkpoint">Bike Checkpoint</option>
-                      <option value="t2_finish">T2 Finish</option>
-                      <option value="run_checkpoint">Run Checkpoint</option>
-                      <option value="finish">Finish</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="checkpointName">Name</Label>
-                    <Input
-                      id="checkpointName"
-                      value={newCheckpoint.name}
-                      onChange={(e) => setNewCheckpoint({ ...newCheckpoint, name: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="checkpointDistance">Distance (km)</Label>
-                    <Input
-                      id="checkpointDistance"
-                      type="number"
-                      step="0.1"
-                      value={newCheckpoint.distance_km}
-                      onChange={(e) =>
-                        setNewCheckpoint({ ...newCheckpoint, distance_km: Number.parseFloat(e.target.value) })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="checkpointOrder">Order</Label>
-                    <Input
-                      id="checkpointOrder"
-                      type="number"
-                      value={newCheckpoint.order_index}
-                      onChange={(e) =>
-                        setNewCheckpoint({ ...newCheckpoint, order_index: Number.parseInt(e.target.value) })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-                <Button type="submit" disabled={loading || newCheckpoint.template_id === 0}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Checkpoint
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Existing Checkpoints by Template */}
-          {templates.map((template) => (
-            <Card key={template.id}>
-              <CardHeader>
-                <CardTitle>{template.name} Checkpoints</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {checkpoints[template.id]?.map((checkpoint) => (
-                    <div key={checkpoint.id} className="border rounded-lg p-3">
-                      {editingCheckpoint?.id === checkpoint.id ? (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <select
-                              className="w-full p-2 border rounded-md"
-                              value={editingCheckpoint.checkpoint_type}
-                              onChange={(e) =>
-                                setEditingCheckpoint({ ...editingCheckpoint, checkpoint_type: e.target.value })
-                              }
-                            >
-                              <option value="swim_start">Swim Start</option>
-                              <option value="swim_finish">Swim Finish</option>
-                              <option value="t1_finish">T1 Finish</option>
-                              <option value="bike_checkpoint">Bike Checkpoint</option>
-                              <option value="t2_finish">T2 Finish</option>
-                              <option value="run_checkpoint">Run Checkpoint</option>
-                              <option value="finish">Finish</option>
-                            </select>
-                            <Input
-                              value={editingCheckpoint.name}
-                              onChange={(e) => setEditingCheckpoint({ ...editingCheckpoint, name: e.target.value })}
-                            />
-                            <Input
-                              type="number"
-                              step="0.1"
-                              value={editingCheckpoint.distance_km || 0}
-                              onChange={(e) =>
-                                setEditingCheckpoint({
-                                  ...editingCheckpoint,
-                                  distance_km: Number.parseFloat(e.target.value),
-                                })
-                              }
-                            />
-                            <Input
-                              type="number"
-                              value={editingCheckpoint.order_index}
-                              onChange={(e) =>
-                                setEditingCheckpoint({
-                                  ...editingCheckpoint,
-                                  order_index: Number.parseInt(e.target.value),
-                                })
-                              }
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => updateCheckpoint(editingCheckpoint)}>
-                              <Save className="h-4 w-4 mr-2" />
-                              Save
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setEditingCheckpoint(null)}>
-                              <X className="h-4 w-4 mr-2" />
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Badge className={getCheckpointTypeColor(checkpoint.checkpoint_type)}>
-                              {checkpoint.checkpoint_type.replace("_", " ")}
-                            </Badge>
-                            <div>
-                              <span className="font-medium">{checkpoint.name}</span>
-                              {checkpoint.distance_km && (
-                                <span className="text-sm text-gray-500 ml-2">({checkpoint.distance_km}km)</span>
-                              )}
-                              <span className="text-xs text-gray-400 ml-2">Order: {checkpoint.order_index}</span>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => setEditingCheckpoint(checkpoint)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => deleteCheckpoint(checkpoint.id, template.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      )}
+      {/* Existing Templates */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Existing Templates</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {templates.map((template) => (
+              <div key={template.id} className="border rounded-lg p-4 space-y-4">
+                {editingTemplate?.id === template.id ? (
+                  <div className="space-y-6">
+                    {/* Template Edit Form */}
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-lg">Edit Template</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Input
+                          placeholder="Template Name"
+                          value={editingTemplate.name}
+                          onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
+                        />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Swim Distance (km)"
+                          value={editingTemplate.swim_distance}
+                          onChange={(e) =>
+                            setEditingTemplate({
+                              ...editingTemplate,
+                              swim_distance: Number.parseFloat(e.target.value),
+                            })
+                          }
+                        />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Bike Distance (km)"
+                          value={editingTemplate.bike_distance}
+                          onChange={(e) =>
+                            setEditingTemplate({
+                              ...editingTemplate,
+                              bike_distance: Number.parseFloat(e.target.value),
+                            })
+                          }
+                        />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Run Distance (km)"
+                          value={editingTemplate.run_distance}
+                          onChange={(e) =>
+                            setEditingTemplate({
+                              ...editingTemplate,
+                              run_distance: Number.parseFloat(e.target.value),
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => updateTemplate(editingTemplate)}>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Template
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingTemplate(null)}>
+                          <X className="h-4 w-4 mr-2" />
+                          Cancel
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => deleteTemplate(template.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Template
+                        </Button>
+                      </div>
                     </div>
-                  ))}
-                  {(!checkpoints[template.id] || checkpoints[template.id].length === 0) && (
-                    <p className="text-gray-500 text-center py-4">No checkpoints defined for this template</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-      </Tabs>
+
+                    {/* Checkpoints Section */}
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Checkpoints</h4>
+                      
+                      {/* Existing Checkpoints */}
+                      <div className="space-y-2">
+                        {checkpoints[template.id]?.map((checkpoint) => (
+                          <div key={checkpoint.id} className="border rounded-lg p-3">
+                            {editingCheckpoint?.id === checkpoint.id ? (
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                  <select
+                                    className="w-full p-2 border rounded-md"
+                                    value={editingCheckpoint.checkpoint_type}
+                                    onChange={(e) =>
+                                      setEditingCheckpoint({ ...editingCheckpoint, checkpoint_type: e.target.value })
+                                    }
+                                  >
+                                    {getAvailableCheckpointTypes(template.id, editingCheckpoint.id).map(type => (
+                                      <option key={type.value} value={type.value}>
+                                        {type.label}
+                                      </option>
+                                    ))}
+                                    {/* Always include the current type even if it would normally be filtered out */}
+                                    {!getAvailableCheckpointTypes(template.id, editingCheckpoint.id)
+                                      .some(type => type.value === editingCheckpoint.checkpoint_type) && (
+                                      <option value={editingCheckpoint.checkpoint_type}>
+                                        {formatCheckpointTypeName(editingCheckpoint.checkpoint_type)}
+                                      </option>
+                                    )}
+                                  </select>
+                                  <Input
+                                    placeholder="Checkpoint Name"
+                                    value={editingCheckpoint.name}
+                                    onChange={(e) => setEditingCheckpoint({ ...editingCheckpoint, name: e.target.value })}
+                                  />
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    placeholder="Distance (km)"
+                                    value={editingCheckpoint.distance_km || 0}
+                                    onChange={(e) =>
+                                      setEditingCheckpoint({
+                                        ...editingCheckpoint,
+                                        distance_km: Number.parseFloat(e.target.value),
+                                      })
+                                    }
+                                  />
+                                  <Input
+                                    type="number"
+                                    placeholder="Order"
+                                    value={editingCheckpoint.order_index}
+                                    onChange={(e) =>
+                                      setEditingCheckpoint({
+                                        ...editingCheckpoint,
+                                        order_index: Number.parseInt(e.target.value),
+                                      })
+                                    }
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button size="sm" onClick={() => updateCheckpoint(editingCheckpoint)}>
+                                    <Save className="h-4 w-4 mr-2" />
+                                    Save
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => setEditingCheckpoint(null)}>
+                                    <X className="h-4 w-4 mr-2" />
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <Badge className={getCheckpointTypeColor(checkpoint.checkpoint_type)}>
+                                    {checkpoint.checkpoint_type.replace("_", " ")}
+                                  </Badge>
+                                  <div>
+                                    <span className="font-medium">{checkpoint.name}</span>
+                                    {checkpoint.distance_km && (
+                                      <span className="text-sm text-gray-500 ml-2">({checkpoint.distance_km}km)</span>
+                                    )}
+                                    <span className="text-xs text-gray-400 ml-2">Order: {checkpoint.order_index}</span>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button size="sm" variant="outline" onClick={() => setEditingCheckpoint(checkpoint)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => deleteCheckpoint(checkpoint.id, template.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {(!checkpoints[template.id] || checkpoints[template.id].length === 0) && (
+                          <p className="text-gray-500 text-center py-4">No checkpoints defined for this template</p>
+                        )}
+                      </div>
+
+                      {/* Add New Checkpoint Form */}
+                      <CheckpointForm
+                        templateId={template.id}
+                        onSubmit={(data) => createCheckpoint(template.id, data)}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold">{template.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        Swim: {template.swim_distance}km • Bike: {template.bike_distance}km • Run:{" "}
+                        {template.run_distance}km
+                      </p>
+                      <p className="text-xs text-gray-500">Checkpoints: {checkpoints[template.id]?.length || 0}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setEditingTemplate(template)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => deleteTemplate(template.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

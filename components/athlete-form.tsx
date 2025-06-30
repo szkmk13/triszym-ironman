@@ -27,6 +27,7 @@ export function AthleteForm() {
   })
   const [validationErrors, setValidationErrors] = useState({
     swim: "",
+    templateId: "",
     bike: "",
     run: "",
     t1: "",
@@ -43,19 +44,19 @@ export function AthleteForm() {
   } as any)
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('lecimy')
     e.preventDefault()
-
+    console.log(formData)
     // Check for validation errors
     const hasErrors = Object.values(validationErrors).some((error) => error !== "")
     if (hasErrors) {
-      toast({
-        title: "Validation Error",
-        description: "Please fix the time format errors before submitting",
-        variant: "destructive",
-      })
+      toast.error( "Please fix the time format errors before submitting")
       return
     }
-
+    if (!formData.templateId) {
+      toast.error( "Please select template")
+      return
+    }
     // Check for required predicted times (all are now required)
     if (
       !formData.predictedSwimTime ||
@@ -64,11 +65,7 @@ export function AthleteForm() {
       !formData.predictedT1Time ||
       !formData.predictedT2Time
     ) {
-      toast({
-        title: "Validation Error",
-        description: "All predicted times are required",
-        variant: "destructive",
-      })
+      toast.error( "All predicted times are required")
       return
     }
 
@@ -96,10 +93,7 @@ export function AthleteForm() {
         predicted_t2_time: formatTimeForDatabase(formData.predictedT2Time),
       })
 
-      toast({
-        title: "Success",
-        description: "Athlete added successfully",
-      })
+      toast.success("Athlete added successfully")
 
       setFormData({
         name: "",
@@ -111,18 +105,14 @@ export function AthleteForm() {
         predictedT2Time: "",
       })
 
-      setValidationErrors({ swim: "", bike: "", run: "", t1: "", t2: "" })
+      setValidationErrors({ swim: "", bike: "", run: "", t1: "", t2: "",templateId:"" })
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add athlete",
-        variant: "destructive",
-      })
+      toast.error(error instanceof Error ? error.message : "Failed to add athlete");
     }
   }
 
   return (
-    <Card>
+    <Card>  
       <CardHeader>
         <CardTitle>Add New Athlete</CardTitle>
       </CardHeader>

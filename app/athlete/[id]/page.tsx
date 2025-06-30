@@ -547,6 +547,7 @@ export default function AthleteDetailPage() {
                 } else if ((checkpoint.checkpoint_type === "run_checkpoint" || checkpoint.checkpoint_type === "finish") && checkpoint.distance_km) {
                   // Calculate elapsed time from last checkpoint for run segments
                   const lastCheckpointTime = getLastCheckpointForSegment(checkpoint.checkpoint_type, checkpoint)
+                  console.log("laschepoingtime",lastCheckpointTime,checkpoint)
                   if (lastCheckpointTime) {
                     const segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
                     
@@ -559,8 +560,7 @@ export default function AthleteDetailPage() {
                     const previousDistance = currentIndex > 0 && runCheckpoints[currentIndex - 1].distance_km 
                       ? runCheckpoints[currentIndex - 1].distance_km 
                       : 0
-                    
-                    const segmentDistance = checkpoint.checkpoint_type === "finish" 
+                      const segmentDistance = checkpoint.checkpoint_type === "finish" 
                       ? athlete.template.run_distance - previousDistance
                       : checkpoint.distance_km - previousDistance
                       
