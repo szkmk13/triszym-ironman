@@ -99,19 +99,26 @@ export default function CheckpointItem({
         return t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
       }
     }
-
-    return null
+    console.log(checkpoints,currentCheckpoint.id)
+    // return getCheckpointTime(currentCheckpoint.id)
+    const allCheckpoints = checkpoints.sort((a, b) => a.order_index - b.order_index)
+    const currentIndex = allCheckpoints.findIndex((cp) => cp.id === currentCheckpoint.id)
+    if (currentIndex > 0) {
+        return getCheckpointTime(checkpoints[currentIndex - 1].id)
+      }
+    return getCheckpointTime(currentCheckpoint.id)
   }
 
   // Calculate pace for this checkpoint
   let paceInfo = ""
+  let segmentElapsedTime = ""
   if (time && athlete.template) {
     if (checkpoint.checkpoint_type === "swim_finish") {
       paceInfo = calculateCheckpointPace(elapsedTime, athlete.template.swim_distance, checkpoint.checkpoint_type)
     } else if (checkpoint.checkpoint_type === "bike_checkpoint" && checkpoint.distance_km) {
       const lastCheckpointTime = getLastCheckpointForSegment("bike_checkpoint", checkpoint)
       if (lastCheckpointTime) {
-        const segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
+        segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
         const bikeCheckpoints = checkpoints
           .filter((cp) => cp.checkpoint_type === "bike_checkpoint" || cp.checkpoint_type === "t1_finish")
           .sort((a, b) => a.order_index - b.order_index)
@@ -133,7 +140,7 @@ export default function CheckpointItem({
     ) {
       const lastCheckpointTime = getLastCheckpointForSegment(checkpoint.checkpoint_type, checkpoint)
       if (lastCheckpointTime) {
-        const segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
+        segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
         const runCheckpoints = checkpoints
           .filter(
             (cp) =>
@@ -160,6 +167,11 @@ export default function CheckpointItem({
       } else {
         paceInfo = calculateCheckpointPace(elapsedTime, checkpoint.distance_km, checkpoint.checkpoint_type)
       }
+    }
+    else {
+      const lastCheckpointTime = getLastCheckpointForSegment(checkpoint.checkpoint_type, checkpoint)
+      segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
+      console.log(segmentElapsedTime)
     }
   }
 
@@ -329,10 +341,10 @@ export default function CheckpointItem({
               <>
                 <div className="text-right">
                   <div className="font-medium">
-                    {new Date(time.actual_time).toLocaleTimeString("en-GB", { hour12: false })}
+                    {new Date(time.actual_time).toLocaleTimeString("en-GB", { hour12: false })} ({elapsedTime})
                   </div>
                   <div className="text-sm text-gray-500">
-                    Elapsed: {elapsedTime} {paceInfo}
+                  This segment: {segmentElapsedTime} {paceInfo} 
                   </div>
                 </div>
                 <div className="flex gap-1">
