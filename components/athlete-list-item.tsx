@@ -81,7 +81,7 @@ export function AthleteListItem({ athlete }: AthleteListItemProps) {
           {swimStartTime && (
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              <span>{new Date(swimStartTime.actual_time).toLocaleTimeString()}</span>
+              <span>{new Date(swimStartTime.actual_time).toLocaleTimeString("en-GB", { hour12: false })}</span>
             </div>
           )}
         </div>

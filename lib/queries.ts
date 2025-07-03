@@ -155,7 +155,43 @@ export function useRecordTime() {
     },
   })
 }
+export function useEditAthleteTime() {
+  const queryClient = useQueryClient()
 
+  return useMutation({
+    mutationFn: async ({
+      id,
+      updates,
+      athlete_id, // Still needed for query invalidation
+    }: {
+      id: number
+      athlete_id: number
+      updates: {
+        athlete_id?: number
+        checkpoint_id?: number
+        actual_time?: string
+      }
+    }) => {
+      console.log(updates)
+      const { data, error } = await supabase
+        .from("athlete_times")
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      return data
+    },
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.athleteTimes(variables.athlete_id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.athletes })
+      queryClient.invalidateQueries({ queryKey: queryKeys.athlete(variables.athlete_id) })
+    },
+  })
+}
 export function useCreateTemplate() {
   const queryClient = useQueryClient()
 
