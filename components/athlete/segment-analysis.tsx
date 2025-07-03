@@ -18,6 +18,30 @@ interface SegmentAnalysisProps {
   estimatedFinishTime?: string | null
 }
 
+// Helper function to add/subtract time from a time string
+function adjustTimeByDifference(baseTime: string, differenceInSeconds: number): string {
+  const [hours, minutes, seconds] = baseTime.split(':').map(Number)
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds
+  const adjustedSeconds = Math.max(0, totalSeconds + differenceInSeconds)
+  
+  const newHours = Math.floor(adjustedSeconds / 3600)
+  const newMinutes = Math.floor((adjustedSeconds % 3600) / 60)
+  const newSecs = adjustedSeconds % 60
+  
+  return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSecs).padStart(2, '0')}`
+}
+
+// Helper function to get time difference in seconds
+function getTimeDifferenceInSeconds(predicted: string, actual: string): number {
+  const [predHours, predMinutes, predSeconds] = predicted.split(':').map(Number)
+  const [actHours, actMinutes, actSeconds] = actual.split(':').map(Number)
+  
+  const predTotalSeconds = predHours * 3600 + predMinutes * 60 + predSeconds
+  const actTotalSeconds = actHours * 3600 + actMinutes * 60 + actSeconds
+  
+  return actTotalSeconds - predTotalSeconds
+}
+
 export default function SegmentAnalysis({
   type,
   athlete,
@@ -29,6 +53,37 @@ export default function SegmentAnalysis({
   predictedTotalTime,
   estimatedFinishTime,
 }: SegmentAnalysisProps) {
+  
+  // Get swim difference to adjust bike predicted time
+  const getSwimDifference = () => {
+    const swimFinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "swim_finish")
+    const swimFinishTime = swimFinishCheckpoint ? getCheckpointTime(swimFinishCheckpoint.id) : null
+    
+    if (swimFinishTime && swimStartTime) {
+      const actualSwimTime = calculateElapsedTime(swimStartTime.actual_time, swimFinishTime.actual_time)
+      if (actualSwimTime && athlete.predicted_swim_time) {
+        return getTimeDifferenceInSeconds(athlete.predicted_swim_time, actualSwimTime)
+      }
+    }
+    return 0
+  }
+  
+  // Get bike difference to adjust run predicted time
+  const getBikeDifference = () => {
+    const t1FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t1_finish")
+    const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish")
+    const t1Time = t1FinishCheckpoint ? getCheckpointTime(t1FinishCheckpoint.id) : null
+    const t2Time = t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
+    
+    if (t1Time && t2Time) {
+      const actualBikeTime = calculateElapsedTime(t1Time.actual_time, t2Time.actual_time)
+      if (actualBikeTime && athlete.predicted_bike_time) {
+        return getTimeDifferenceInSeconds(athlete.predicted_bike_time, actualBikeTime)
+      }
+    }
+    return 0
+  }
+
   const getSegmentData = () => {
     switch (type) {
       case "swim": {
@@ -67,18 +122,24 @@ export default function SegmentAnalysis({
         const totalElapsed =
           t2Time && swimStartTime ? calculateElapsedTime(swimStartTime.actual_time, t2Time.actual_time) : null
 
+        // Adjust bike predicted time based on swim difference
+        const swimDifference = getSwimDifference()
+        const adjustedBikePredicted = swimDifference !== 0 
+          ? adjustTimeByDifference(athlete.predicted_bike_time, swimDifference)
+          : athlete.predicted_bike_time
+
         return {
           title: "Bike",
           bgColor: "bg-orange-50",
           textColor: "text-orange-800",
           accentColor: "text-orange-600",
           borderColor: "border-orange-200",
-          predicted: `${formatTimeWithSeconds(athlete.predicted_bike_time)} (${calculateBikeSpeed(athlete.predicted_bike_time, athlete.template?.bike_distance || 0)} km/h)`,
+          predicted: `${formatTimeWithSeconds(adjustedBikePredicted)} (${calculateBikeSpeed(adjustedBikePredicted, athlete.template?.bike_distance || 0)} km/h)${swimDifference !== 0 ? ' *' : ''}`,
           actual: actualTime
             ? `${actualTime} (${calculateBikeSpeed(actualTime, athlete.template?.bike_distance || 0)} km/h)`
             : "--:--:--",
           totalElapsed,
-          predictedTime: athlete.predicted_bike_time,
+          predictedTime: adjustedBikePredicted,
           actualTime,
         }
       }
@@ -92,18 +153,27 @@ export default function SegmentAnalysis({
         const totalElapsed =
           finishTime && swimStartTime ? calculateElapsedTime(swimStartTime.actual_time, finishTime.actual_time) : null
 
+        // Adjust run predicted time based on swim and bike differences
+        const swimDifference = getSwimDifference()
+        const bikeDifference = getBikeDifference()
+        const totalDifference = swimDifference + bikeDifference
+        
+        const adjustedRunPredicted = totalDifference !== 0
+          ? adjustTimeByDifference(athlete.predicted_run_time, totalDifference)
+          : athlete.predicted_run_time
+
         return {
           title: "Run",
           bgColor: "bg-red-50",
           textColor: "text-red-800",
           accentColor: "text-red-600",
           borderColor: "border-red-200",
-          predicted: `${formatTimeWithSeconds(athlete.predicted_run_time)} (${calculateRunPace(athlete.predicted_run_time, athlete.template?.run_distance || 0)}/km)`,
+          predicted: `${formatTimeWithSeconds(adjustedRunPredicted)} (${calculateRunPace(adjustedRunPredicted, athlete.template?.run_distance || 0)}/km)${totalDifference !== 0 ? ' *' : ''}`,
           actual: actualTime
             ? `${actualTime} (${calculateRunPace(actualTime, athlete.template?.run_distance || 0)}/km)`
             : "--:--:--",
           totalElapsed,
-          predictedTime: athlete.predicted_run_time,
+          predictedTime: adjustedRunPredicted,
           actualTime,
         }
       }
@@ -163,6 +233,11 @@ export default function SegmentAnalysis({
           </div>
         )}
       </div>
+      {(type === "bike" || type === "run") && segmentData.predicted.includes('*') && (
+        <div className="mt-2 text-xs text-gray-600">
+          * Adjusted based on previous segment performance
+        </div>
+      )}
     </div>
   )
 }

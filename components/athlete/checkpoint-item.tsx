@@ -267,14 +267,15 @@ export default function CheckpointItem({
           <div className="flex items-center gap-2">
             {isEditing ? (
               <div className="flex items-center gap-2">
-                <Input
-                  type="time"
-                  step="1"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  className="w-32"
-                  disabled={editAthleteTimeMutation.isPending}
-                />
+<Input
+  type="text"
+  placeholder="HH:MM:SS"
+  value={editValue}
+  onChange={(e) => setEditValue(e.target.value)}
+  className="w-32"
+  disabled={editAthleteTimeMutation.isPending}
+  pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
+/>
 
                 <Button
                   size="sm"
