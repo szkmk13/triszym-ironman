@@ -326,56 +326,6 @@ export default function TemplateEditPage() {
     }
   }
 
-  const createDefaultCheckpoints = async () => {
-    if (!template) return
-
-    setLoading(true)
-    try {
-      const defaultCheckpoints = [
-        {
-          template_id: templateId,
-          checkpoint_type: "swim",
-          name: "Swim Start",
-          distance_km: 0,
-          order_index: 0,
-        },
-        {
-          template_id: templateId,
-          checkpoint_type: "swim",
-          name: "Swim Finish",
-          distance_km: template.swim_distance,
-          order_index: 1,
-        },
-        {
-          template_id: templateId,
-          checkpoint_type: "bike",
-          name: "Bike Checkpoints",
-          distance_km: template.bike_distance / 2, // Middle of bike route
-          order_index: 0,
-        },
-        {
-          template_id: templateId,
-          checkpoint_type: "run",
-          name: "Run Checkpoints",
-          distance_km: template.run_distance / 2, // Middle of run route
-          order_index: 0,
-        },
-      ]
-
-      const { error } = await supabase.from("template_checkpoints").insert(defaultCheckpoints)
-
-      if (error) throw error
-
-      toast.success("Default checkpoints created")
-      await fetchTemplate()
-    } catch (error) {
-      console.error("Error creating default checkpoints:", error)
-      toast.error("Failed to create default checkpoints")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
@@ -622,12 +572,6 @@ export default function TemplateEditPage() {
           <h1 className="text-2xl font-bold">Edit Template: {template.name}</h1>
         </div>
         <div className="flex gap-2">
-          {checkpoints.length === 0 && (
-            <Button onClick={createDefaultCheckpoints} disabled={loading} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Default Checkpoints
-            </Button>
-          )}
           <Button onClick={saveTemplate} disabled={loading}>
             <Save className="h-4 w-4 mr-2" />
             Save Template
@@ -670,6 +614,7 @@ export default function TemplateEditPage() {
           <CheckpointsTab
             templateId={templateId}
             checkpoints={checkpoints}
+            fetchTemplate={fetchTemplate}
           />
         </TabsContent>
 

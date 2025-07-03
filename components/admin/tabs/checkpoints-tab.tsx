@@ -14,16 +14,13 @@ import { useState } from "react"
 interface CheckpointsTabProps {
   templateId: number
   checkpoints: TemplateCheckpoint[]
-  // onCreateDefaultCheckpoints: () => void
-  // onCreateCheckpoint: (checkpointData: any) => void
-  // onUpdateCheckpoint: (checkpoint: TemplateCheckpoint) => void
-  // onDeleteCheckpoint: (checkpointId: number) => void
-  // loading: boolean
+  fetchTemplate: () => void
 }
 
 export function CheckpointsTab({
   templateId,
   checkpoints,
+  fetchTemplate
 }: CheckpointsTabProps) {
   const [loading, setLoading] = useState(false)
   
