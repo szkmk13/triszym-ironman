@@ -18,7 +18,7 @@ export type TemplateCheckpoint = {
   template_id: number
   checkpoint_type: string
   name: string
-  distance_km: number | null
+  distance_km: number
   order_index: number
 }
 

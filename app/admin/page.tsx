@@ -5,17 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { supabase, type Template, type TemplateCheckpoint } from "@/lib/supabase"
 import { toast } from "sonner"
-import { Settings } from "lucide-react"
+import { Settings, Edit, Trash2, MapPin, CheckCircle } from "lucide-react"
 import { LoginForm } from "@/components/admin/login-form"
 import { TemplateForm } from "@/components/admin/template-form"
-import { TemplateCard } from "@/components/admin/template-card"
-import { TemplateEditor } from "@/components/admin/template-editor"
+import Link from "next/link"
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [templates, setTemplates] = useState<Template[]>([])
   const [checkpoints, setCheckpoints] = useState<{ [key: number]: TemplateCheckpoint[] }>({})
-  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -75,32 +73,6 @@ export default function AdminPage() {
     }
   }
 
-  const updateTemplate = async (template: Template) => {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from("templates")
-        .update({
-          name: template.name,
-          swim_distance: template.swim_distance,
-          bike_distance: template.bike_distance,
-          run_distance: template.run_distance,
-        })
-        .eq("id", template.id)
-        .select()
-
-      if (error) throw error
-
-      toast.success("Template updated successfully")
-      await fetchTemplates()
-    } catch (error) {
-      console.error("Error updating template:", error)
-      toast.error("Failed to update template")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const deleteTemplate = async (templateId: number) => {
     if (
       !confirm(
@@ -117,7 +89,6 @@ export default function AdminPage() {
       if (error) throw error
 
       toast.success("Template deleted successfully")
-      setEditingTemplate(null)
       await fetchTemplates()
     } catch (error) {
       console.error("Error deleting template:", error)
@@ -127,77 +98,15 @@ export default function AdminPage() {
     }
   }
 
-  const createCheckpoint = async (templateId: number, checkpointData: any) => {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from("template_checkpoints")
-        .insert({
-          template_id: templateId,
-          checkpoint_type: checkpointData.checkpoint_type,
-          name: checkpointData.name,
-          distance_km: checkpointData.distance_km || null,
-          order_index: checkpointData.order_index,
-        })
-        .select()
+  const getSegmentStatus = (template: Template) => {
+    const segments = [
+      { name: "Swim", hasMap: !!template.swim_map_url, hasRoute: !!template.swim_route_data },
+      { name: "Bike", hasMap: !!template.bike_map_url, hasRoute: !!template.bike_route_data },
+      { name: "Run", hasMap: !!template.run_map_url, hasRoute: !!template.run_route_data },
+    ]
 
-      if (error) throw error
-
-      toast.success("Checkpoint created successfully")
-      await fetchCheckpoints(templateId)
-    } catch (error) {
-      console.error("Error creating checkpoint:", error)
-      toast.error("Failed to create checkpoint")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const updateCheckpoint = async (checkpoint: TemplateCheckpoint) => {
-    setLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from("template_checkpoints")
-        .update({
-          checkpoint_type: checkpoint.checkpoint_type,
-          name: checkpoint.name,
-          distance_km: checkpoint.distance_km || null,
-          order_index: checkpoint.order_index,
-        })
-        .eq("id", checkpoint.id)
-        .select()
-
-      if (error) throw error
-
-      toast.success("Checkpoint updated successfully")
-      await fetchCheckpoints(checkpoint.template_id)
-    } catch (error) {
-      console.error("Error updating checkpoint:", error)
-      toast.error("Failed to update checkpoint")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const deleteCheckpoint = async (checkpointId: number, templateId: number) => {
-    if (!confirm("Are you sure you want to delete this checkpoint?")) {
-      return
-    }
-
-    setLoading(true)
-    try {
-      const { data, error } = await supabase.from("template_checkpoints").delete().eq("id", checkpointId).select()
-
-      if (error) throw error
-
-      toast.success("Checkpoint deleted successfully")
-      await fetchCheckpoints(templateId)
-    } catch (error) {
-      console.error("Error deleting checkpoint:", error)
-      toast.error("Failed to delete checkpoint")
-    } finally {
-      setLoading(false)
-    }
+    const configured = segments.filter((s) => s.hasMap && s.hasRoute).length
+    return { segments, configured, total: segments.length }
   }
 
   if (!isAuthenticated) {
@@ -223,32 +132,70 @@ export default function AdminPage() {
           <CardTitle>Existing Templates</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            {templates.map((template) => (
-              <div key={template.id} className="border rounded-lg p-4 space-y-4">
-                {editingTemplate?.id === template.id ? (
-                  <TemplateEditor
-                    template={template}
-                    checkpoints={checkpoints[template.id] || []}
-                    onUpdateTemplate={updateTemplate}
-                    onDeleteTemplate={deleteTemplate}
-                    onCreateCheckpoint={createCheckpoint}
-                    onUpdateCheckpoint={updateCheckpoint}
-                    onDeleteCheckpoint={deleteCheckpoint}
-                    onCancel={() => setEditingTemplate(null)}
-                    loading={loading}
-                  />
-                ) : (
-                  <TemplateCard
-                    template={template}
-                    checkpointCount={checkpoints[template.id]?.length || 0}
-                    onEdit={setEditingTemplate}
-                    onDelete={deleteTemplate}
-                    loading={loading}
-                  />
-                )}
-              </div>
-            ))}
+          <div className="space-y-4">
+            {templates.map((template) => {
+              const segmentStatus = getSegmentStatus(template)
+              return (
+                <div key={template.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold">{template.name}</h3>
+                      <div className="flex gap-4 text-sm text-muted-foreground">
+                        <span>Swim: {template.swim_distance}km</span>
+                        <span>Bike: {template.bike_distance}km</span>
+                        <span>Run: {template.run_distance}km</span>
+                        <span>Checkpoints: {checkpoints[template.id]?.length || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1 text-sm">
+                          <MapPin className="h-4 w-4" />
+                          <span>
+                            Routes: {segmentStatus.configured}/{segmentStatus.total} configured
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          {segmentStatus.segments.map((segment, index) => (
+                            <div
+                              key={index}
+                              className={`text-xs px-2 py-1 rounded ${
+                                segment.hasMap && segment.hasRoute
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              {segment.name}
+                              {segment.hasMap && segment.hasRoute && <CheckCircle className="inline h-3 w-3 ml-1" />}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Link href={`/admin/template/${template.id}`}>
+                        <Button size="sm" variant="outline">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit & Map
+                        </Button>
+                      </Link>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteTemplate(template.id)}
+                        disabled={loading}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+            {templates.length === 0 && !loading && (
+              <p className="text-center text-muted-foreground py-8">
+                No templates found. Create your first template above.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
