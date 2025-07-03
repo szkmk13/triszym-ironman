@@ -23,11 +23,11 @@ function adjustTimeByDifference(baseTime: string, differenceInSeconds: number): 
   const [hours, minutes, seconds] = baseTime.split(':').map(Number)
   const totalSeconds = hours * 3600 + minutes * 60 + seconds
   const adjustedSeconds = Math.max(0, totalSeconds + differenceInSeconds)
-  
+
   const newHours = Math.floor(adjustedSeconds / 3600)
   const newMinutes = Math.floor((adjustedSeconds % 3600) / 60)
   const newSecs = adjustedSeconds % 60
-  
+
   return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSecs).padStart(2, '0')}`
 }
 
@@ -35,10 +35,10 @@ function adjustTimeByDifference(baseTime: string, differenceInSeconds: number): 
 function getTimeDifferenceInSeconds(predicted: string, actual: string): number {
   const [predHours, predMinutes, predSeconds] = predicted.split(':').map(Number)
   const [actHours, actMinutes, actSeconds] = actual.split(':').map(Number)
-  
+
   const predTotalSeconds = predHours * 3600 + predMinutes * 60 + predSeconds
   const actTotalSeconds = actHours * 3600 + actMinutes * 60 + actSeconds
-  
+
   return actTotalSeconds - predTotalSeconds
 }
 
@@ -53,12 +53,10 @@ export default function SegmentAnalysis({
   predictedTotalTime,
   estimatedFinishTime,
 }: SegmentAnalysisProps) {
-  
-  // Get swim difference to adjust bike predicted time
   const getSwimDifference = () => {
     const swimFinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "swim_finish")
     const swimFinishTime = swimFinishCheckpoint ? getCheckpointTime(swimFinishCheckpoint.id) : null
-    
+
     if (swimFinishTime && swimStartTime) {
       const actualSwimTime = calculateElapsedTime(swimStartTime.actual_time, swimFinishTime.actual_time)
       if (actualSwimTime && athlete.predicted_swim_time) {
@@ -67,14 +65,13 @@ export default function SegmentAnalysis({
     }
     return 0
   }
-  
-  // Get bike difference to adjust run predicted time
+
   const getBikeDifference = () => {
     const t1FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t1_finish")
     const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish")
     const t1Time = t1FinishCheckpoint ? getCheckpointTime(t1FinishCheckpoint.id) : null
     const t2Time = t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
-    
+
     if (t1Time && t2Time) {
       const actualBikeTime = calculateElapsedTime(t1Time.actual_time, t2Time.actual_time)
       if (actualBikeTime && athlete.predicted_bike_time) {
@@ -122,24 +119,18 @@ export default function SegmentAnalysis({
         const totalElapsed =
           t2Time && swimStartTime ? calculateElapsedTime(swimStartTime.actual_time, t2Time.actual_time) : null
 
-        // Adjust bike predicted time based on swim difference
-        const swimDifference = getSwimDifference()
-        const adjustedBikePredicted = swimDifference !== 0 
-          ? adjustTimeByDifference(athlete.predicted_bike_time, swimDifference)
-          : athlete.predicted_bike_time
-
         return {
           title: "Bike",
           bgColor: "bg-orange-50",
           textColor: "text-orange-800",
           accentColor: "text-orange-600",
           borderColor: "border-orange-200",
-          predicted: `${formatTimeWithSeconds(adjustedBikePredicted)} (${calculateBikeSpeed(adjustedBikePredicted, athlete.template?.bike_distance || 0)} km/h)${swimDifference !== 0 ? ' *' : ''}`,
+          predicted: `${formatTimeWithSeconds(athlete.predicted_bike_time)} (${calculateBikeSpeed(athlete.predicted_bike_time, athlete.template?.bike_distance || 0)} km/h)`,
           actual: actualTime
             ? `${actualTime} (${calculateBikeSpeed(actualTime, athlete.template?.bike_distance || 0)} km/h)`
             : "--:--:--",
           totalElapsed,
-          predictedTime: adjustedBikePredicted,
+          predictedTime: athlete.predicted_bike_time,
           actualTime,
         }
       }
@@ -153,27 +144,18 @@ export default function SegmentAnalysis({
         const totalElapsed =
           finishTime && swimStartTime ? calculateElapsedTime(swimStartTime.actual_time, finishTime.actual_time) : null
 
-        // Adjust run predicted time based on swim and bike differences
-        const swimDifference = getSwimDifference()
-        const bikeDifference = getBikeDifference()
-        const totalDifference = swimDifference + bikeDifference
-        
-        const adjustedRunPredicted = totalDifference !== 0
-          ? adjustTimeByDifference(athlete.predicted_run_time, totalDifference)
-          : athlete.predicted_run_time
-
         return {
           title: "Run",
           bgColor: "bg-red-50",
           textColor: "text-red-800",
           accentColor: "text-red-600",
           borderColor: "border-red-200",
-          predicted: `${formatTimeWithSeconds(adjustedRunPredicted)} (${calculateRunPace(adjustedRunPredicted, athlete.template?.run_distance || 0)}/km)${totalDifference !== 0 ? ' *' : ''}`,
+          predicted: `${formatTimeWithSeconds(athlete.predicted_run_time)} (${calculateRunPace(athlete.predicted_run_time, athlete.template?.run_distance || 0)}/km)`,
           actual: actualTime
             ? `${actualTime} (${calculateRunPace(actualTime, athlete.template?.run_distance || 0)}/km)`
             : "--:--:--",
           totalElapsed,
-          predictedTime: adjustedRunPredicted,
+          predictedTime: athlete.predicted_run_time,
           actualTime,
         }
       }
@@ -183,17 +165,26 @@ export default function SegmentAnalysis({
         const actualTime =
           finishTime && swimStartTime ? calculateElapsedTime(swimStartTime.actual_time, finishTime.actual_time) : null
 
+        const swimDiff = getSwimDifference()
+        const bikeDiff = getBikeDifference()
+        const totalDiff = swimDiff + bikeDiff
+
+        const adjustedTotalPredicted = predictedTotalTime && totalDiff !== 0
+          ? adjustTimeByDifference(predictedTotalTime, totalDiff)
+          : predictedTotalTime
+
         return {
           title: "Total Time",
           bgColor: "bg-gray-50",
           textColor: "text-gray-800",
           accentColor: "text-gray-600",
           borderColor: "border-gray-200",
-          predicted: predictedTotalTime + (estimatedFinishTime ? ` (Est. finish: ${estimatedFinishTime})` : ""),
+          predicted: adjustedTotalPredicted + (estimatedFinishTime ? ` (Est. finish: ${estimatedFinishTime})` : ""),
           actual: actualTime || "--:--:--",
           totalElapsed: null,
-          predictedTime: predictedTotalTime,
+          predictedTime: adjustedTotalPredicted,
           actualTime,
+          totalDiff,
         }
       }
       default:
@@ -233,9 +224,9 @@ export default function SegmentAnalysis({
           </div>
         )}
       </div>
-      {(type === "bike" || type === "run") && segmentData.predicted.includes('*') && (
+      {type === "total" && segmentData.totalDiff !== 0 && (
         <div className="mt-2 text-xs text-gray-600">
-          * Adjusted based on previous segment performance
+          * Predicted total time adjusted based on swim and bike performance
         </div>
       )}
     </div>

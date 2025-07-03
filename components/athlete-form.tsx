@@ -19,11 +19,11 @@ export function AthleteForm() {
   const [formData, setFormData] = useState({
     name: "",
     templateId: "",
-    predictedSwimTime: "",
-    predictedBikeTime: "",
-    predictedRunTime: "",
-    predictedT1Time: "",
-    predictedT2Time: "",
+    predictedSwimTime: "00:00:00",
+    predictedBikeTime: "00:00:00",
+    predictedRunTime: "00:00:00",
+    predictedT1Time: "00:00:00",
+    predictedT2Time: "00:00:00",
   })
   const [validationErrors, setValidationErrors] = useState({
     swim: "",

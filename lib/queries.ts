@@ -115,6 +115,7 @@ export function useCreateAthlete() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.athletes })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates })
     },
   })
 }

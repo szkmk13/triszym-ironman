@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS athletes (
   predicted_swim_time INTERVAL,
   predicted_bike_time INTERVAL,
   predicted_run_time INTERVAL,
-  race_start_time TIMESTAMP WITH TIME ZONE,
+  predicted_t1_time INTERVAL,
+  predicted_t2_time INTERVAL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -51,15 +52,19 @@ ALTER TABLE athlete_times ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public can read templates" ON templates FOR SELECT USING (true);
 CREATE POLICY "Public can insert templates" ON templates FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public can update templates" ON templates FOR UPDATE USING (true);
+CREATE POLICY "Public can delete templates" ON templates FOR DELETE USING (true);
 
 CREATE POLICY "Public can read template_checkpoints" ON template_checkpoints FOR SELECT USING (true);
 CREATE POLICY "Public can insert template_checkpoints" ON template_checkpoints FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public can update template_checkpoints" ON template_checkpoints FOR UPDATE USING (true);
+CREATE POLICY "Public can delete template_checkpoints" ON template_checkpoints FOR DELETE USING (true);
 
 CREATE POLICY "Public can read athletes" ON athletes FOR SELECT USING (true);
 CREATE POLICY "Public can insert athletes" ON athletes FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public can update athletes" ON athletes FOR UPDATE USING (true);
+CREATE POLICY "Public can delete athletes" ON athletes FOR DELETE USING (true);
 
 CREATE POLICY "Public can read athlete_times" ON athlete_times FOR SELECT USING (true);
 CREATE POLICY "Public can insert athlete_times" ON athlete_times FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public can update athlete_times" ON athlete_times FOR UPDATE USING (true);
+CREATE POLICY "Public can delete athlete_times" ON athlete_times FOR DELETE USING (true);

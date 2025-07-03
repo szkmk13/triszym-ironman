@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { CheckCircle, Edit2, Save, X } from "lucide-react"
+import { CheckCircle, Edit2, Save, X, Trash2 } from "lucide-react"
 import { calculateElapsedTime, calculateCheckpointPace, supabase } from "@/lib/supabase"
 import { useEditAthleteTime } from "@/lib/queries"
 import { toast } from "sonner"
@@ -33,6 +33,7 @@ export default function CheckpointItem({
 }: CheckpointItemProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
   const queryClient = useQueryClient()
   const editAthleteTimeMutation = useEditAthleteTime()
 
@@ -72,7 +73,6 @@ export default function CheckpointItem({
         .sort((a, b) => a.order_index - b.order_index)
 
       const currentIndex = bikeCheckpoints.findIndex((cp) => cp.id === currentCheckpoint.id)
-
       if (currentIndex > 0) {
         return getCheckpointTime(bikeCheckpoints[currentIndex - 1].id)
       } else {
@@ -92,7 +92,6 @@ export default function CheckpointItem({
         .sort((a, b) => a.order_index - b.order_index)
 
       const currentIndex = runCheckpoints.findIndex((cp) => cp.id === currentCheckpoint.id)
-
       if (currentIndex > 0) {
         return getCheckpointTime(runCheckpoints[currentIndex - 1].id)
       } else {
@@ -111,23 +110,19 @@ export default function CheckpointItem({
       paceInfo = calculateCheckpointPace(elapsedTime, athlete.template.swim_distance, checkpoint.checkpoint_type)
     } else if (checkpoint.checkpoint_type === "bike_checkpoint" && checkpoint.distance_km) {
       const lastCheckpointTime = getLastCheckpointForSegment("bike_checkpoint", checkpoint)
-
       if (lastCheckpointTime) {
         const segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
-
         const bikeCheckpoints = checkpoints
           .filter((cp) => cp.checkpoint_type === "bike_checkpoint" || cp.checkpoint_type === "t1_finish")
           .sort((a, b) => a.order_index - b.order_index)
 
         const currentIndex = bikeCheckpoints.findIndex((cp) => cp.id === checkpoint.id)
-
         const previousDistance =
           currentIndex > 0 && bikeCheckpoints[currentIndex - 1].distance_km
             ? bikeCheckpoints[currentIndex - 1].distance_km
             : 0
 
         const segmentDistance = checkpoint.distance_km - previousDistance
-
         paceInfo = calculateCheckpointPace(segmentElapsedTime, segmentDistance, checkpoint.checkpoint_type)
       } else {
         paceInfo = calculateCheckpointPace(elapsedTime, checkpoint.distance_km, checkpoint.checkpoint_type)
@@ -137,10 +132,8 @@ export default function CheckpointItem({
       checkpoint.distance_km
     ) {
       const lastCheckpointTime = getLastCheckpointForSegment(checkpoint.checkpoint_type, checkpoint)
-
       if (lastCheckpointTime) {
         const segmentElapsedTime = calculateElapsedTime(lastCheckpointTime.actual_time, time.actual_time)
-
         const runCheckpoints = checkpoints
           .filter(
             (cp) =>
@@ -151,7 +144,6 @@ export default function CheckpointItem({
           .sort((a, b) => a.order_index - b.order_index)
 
         const currentIndex = runCheckpoints.findIndex((cp) => cp.id === checkpoint.id)
-
         const previousDistance =
           currentIndex > 0 && runCheckpoints[currentIndex - 1].distance_km
             ? runCheckpoints[currentIndex - 1].distance_km
@@ -245,6 +237,38 @@ export default function CheckpointItem({
     setEditValue("")
   }
 
+  const handleDeleteTime = async () => {
+    if (!time) return
+    console.log(time)
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the time for ${checkpoint.name}? This action cannot be undone.`,
+    )
+
+    if (!confirmed) return
+
+    setIsDeleting(true)
+
+    try {
+      const { data, error } = await supabase.from("athlete_times").delete().eq("id", time.id).select()
+      if (error) throw error
+
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ["athleteTimes", athlete.id] })
+      queryClient.invalidateQueries({ queryKey: ["athletes"] })
+      queryClient.invalidateQueries({ queryKey: ["athlete", athlete.id] })
+      queryClient.invalidateQueries({ queryKey: ["checkpoints"] })
+
+      toast.success("Time deleted successfully")
+    } catch (error) {
+      console.error("Error deleting time:", error)
+      toast.error("Failed to delete time")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg">
       <div className="flex items-center gap-4">
@@ -267,16 +291,15 @@ export default function CheckpointItem({
           <div className="flex items-center gap-2">
             {isEditing ? (
               <div className="flex items-center gap-2">
-<Input
-  type="text"
-  placeholder="HH:MM:SS"
-  value={editValue}
-  onChange={(e) => setEditValue(e.target.value)}
-  className="w-32"
-  disabled={editAthleteTimeMutation.isPending}
-  pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
-/>
-
+                <Input
+                  type="text"
+                  placeholder="HH:MM:SS"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  className="w-32"
+                  disabled={editAthleteTimeMutation.isPending}
+                  pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
+                />
                 <Button
                   size="sm"
                   onClick={handleSaveEdit}
@@ -285,7 +308,6 @@ export default function CheckpointItem({
                 >
                   <Save className="h-4 w-4" />
                 </Button>
-
                 <Button
                   size="sm"
                   onClick={handleCancelEdit}
@@ -293,6 +315,14 @@ export default function CheckpointItem({
                   variant="outline"
                 >
                   <X className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleDeleteTime}
+                  disabled={editAthleteTimeMutation.isPending || isDeleting}
+                  variant="destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
@@ -305,10 +335,20 @@ export default function CheckpointItem({
                     Elapsed: {elapsedTime} {paceInfo}
                   </div>
                 </div>
-
-                <Button size="sm" onClick={handleEditClick} variant="ghost" className="p-2">
-                  <Edit2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button size="sm" onClick={handleEditClick} variant="ghost" className="p-2">
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleDeleteTime}
+                    disabled={isDeleting}
+                    variant="ghost"
+                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </>
             )}
           </div>
@@ -322,7 +362,6 @@ export default function CheckpointItem({
             >
               {isRecording ? "Recording..." : "Record"}
             </Button>
-
             <Button size="sm" onClick={handleRecordCurrentTime} disabled={isRecording}>
               Now
             </Button>
