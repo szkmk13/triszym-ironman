@@ -1,49 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { AthleteForm } from "@/components/athlete-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { supabase, type Athlete } from "@/lib/supabase";
-import { toast } from "sonner";
-import { Users, Trophy, Clock, Settings } from "lucide-react";
+import { Users, Clock } from "lucide-react";
 import { AthleteListItem } from "@/components/athlete-list-item";
-import Link from "next/link";
 import Navbar from "@/components/navbar";
+import { useAthletes, useTemplates } from "@/lib/queries";
+import { TemplateListItem } from "@/components/template-list-item";
 
 export default function TriathlonCalculator() {
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchAthletes();
-  }, []);
-
-  const fetchAthletes = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("athletes")
-      .select(
-        `
-        *,
-        template:templates(*)
-      `
-      )
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      toast.error("Failed to fetch athletes");
-    } else {
-      setAthletes(data || []);
-    }
-    setLoading(false);
-  };
+  const { data: athletes = [], isLoading: athletesLoading } = useAthletes();
+  const { data: templates = [], isLoading: templatesLoading } = useTemplates();
+  
+  console.log(athletes, athletesLoading);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-          <Navbar/>
-
+      <Navbar />
 
       <Tabs defaultValue="tracker" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -58,10 +32,10 @@ export default function TriathlonCalculator() {
         </TabsList>
 
         <TabsContent value="tracker" className="space-y-6">
-          {loading ? (
+          {templatesLoading ? (
             <Card>
               <CardContent className="p-6">
-                <div className="text-center">Loading athletes...</div>
+                <div className="text-center">Loading races...</div>
               </CardContent>
             </Card>
           ) : athletes.length === 0 ? (
@@ -71,7 +45,8 @@ export default function TriathlonCalculator() {
                   <Users className="h-12 w-12 mx-auto text-gray-400" />
                   <h3 className="text-lg font-semibold">No Athletes Added</h3>
                   <p className="text-gray-600">
-                    Add athletes in the "Manage Athletes" tab to start tracking
+                    Add athletes in the &quot;Manage Athletes&quot; tab to start
+                    tracking
                   </p>
                 </div>
               </CardContent>
@@ -83,8 +58,8 @@ export default function TriathlonCalculator() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {athletes.map((athlete) => (
-                    <AthleteListItem key={athlete.id} athlete={athlete} />
+                  {templates.map((athlete) => (
+                    <TemplateListItem key={athlete.id} athlete={athlete} />
                   ))}
                 </div>
               </CardContent>
@@ -93,9 +68,8 @@ export default function TriathlonCalculator() {
         </TabsContent>
 
         <TabsContent value="manage" className="space-y-6">
-          <AthleteForm onAthleteAdded={fetchAthletes} />
-
-          {athletes.length > 0 && (
+          <AthleteForm />
+          {!athletesLoading && (
             <Card>
               <CardHeader>
                 <CardTitle>Registered Athletes</CardTitle>

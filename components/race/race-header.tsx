@@ -1,18 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Athlete, AthleteTime } from "@/lib/supabase";
-import { ArrowLeft, Trophy, Clock, MapPin } from "lucide-react";
+import { Athlete } from "@/lib/supabase";
+import { ArrowLeft, Trophy, MapPin } from "lucide-react";
 
 interface AthleteHeaderProps {
-  athlete: Athlete;
-  swimStartTime: AthleteTime;
+  template: Athlete;
   onBack: () => void;
 }
 
-export default function AthleteHeader({
-  athlete,
-  swimStartTime,
+export default function RaceHeader({
+  template,
   onBack,
 }: AthleteHeaderProps) {
   return (
@@ -24,12 +22,12 @@ export default function AthleteHeader({
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Trophy className="h-8 w-8" />
-          {athlete.name}
+          {template.name}
         </h1>
         <div className="flex items-center gap-2 text-gray-600">
           <MapPin className="h-4 w-4" />
-          <span>{athlete.template?.name}</span>
-          {swimStartTime && (
+          <span>{template.template?.name}</span>
+          {/* {swimStartTime && (
             <>
               <span>•</span>
               <Clock className="h-4 w-4" />
@@ -41,7 +39,7 @@ export default function AthleteHeader({
                 )}
               </span>
             </>
-          )}
+          )} */}
         </div>
       </div>
     </div>

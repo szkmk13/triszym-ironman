@@ -1,12 +1,12 @@
-'use client'
+"use client";
 import { Button } from "@/components/ui/button";
 import { Trophy, Settings } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function Navbar() {
-    const { user } = useAuth();
-    console.log(user)
+  const { user } = useAuth();
+  console.log(user, user?.role);
   return (
     <div className="flex items-center justify-between container mx-auto p-6 space-y-6">
       <div className="text-center space-y-2">
@@ -19,19 +19,24 @@ export default function Navbar() {
         </p>
       </div>
       <div className="flex items-end">
-        <Link href="/admin">
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Admin
-          </Button>
-        </Link>
-            {user?<></>:        <Link href="/login">
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Log in
-          </Button>
-        </Link>}
-
+        {user ? (
+          <></>
+        ) : (
+          <Link href="/login">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-2" />
+              Log in
+            </Button>
+          </Link>
+        )}
+        {user?.user_metadata?.admin && (
+          <Link href="/admin">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-2" />
+              Admin
+            </Button>
+          </Link>
+        )}
       </div>
     </div>
   );
