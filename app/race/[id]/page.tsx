@@ -37,13 +37,7 @@ export default function RaceDetailPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <RaceHeader template={template} onBack={() => router.back()} />
-
-      <RaceSimulation
-        template={template}
-        athletes={athletes}
-        swimStartCheckpointId={swimStartCheckpointId}
-      />
-
+      
       <Card>
         <CardHeader>
           <CardTitle>Athlete Tracker</CardTitle>
@@ -56,6 +50,14 @@ export default function RaceDetailPage() {
           </div>
         </CardContent>
       </Card>
+      
+      <RaceSimulation
+        template={template}
+        athletes={athletes}
+        swimStartCheckpointId={swimStartCheckpointId}
+      />
+
+
 
       {/* <PerformanceAnalysis
         template={template}
