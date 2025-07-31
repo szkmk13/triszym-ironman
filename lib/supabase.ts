@@ -41,7 +41,7 @@ export type Athlete = {
   name: string
   predicted_bike_time: string | null
   predicted_run_time: string | null
-  predicted_swim_time: string | null
+  predicted_swim_time: string 
   predicted_t1_time: string | null
   predicted_t2_time: string | null
   template?: Template

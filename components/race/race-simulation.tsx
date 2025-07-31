@@ -2,11 +2,9 @@
 
 import type React from "react";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Play, Pause, RotateCcw, Upload } from "lucide-react";
-import type { Template } from "@/lib/supabase";
-import { useState } from "react";
+import type { Athlete, Template } from "@/lib/supabase";
+import { useEffect, useState } from "react";
 
 interface Swimmer {
   id: string;
@@ -18,39 +16,31 @@ interface Swimmer {
 
 interface SimulationTabProps {
   template: Template;
-  swimmers: Swimmer[];
-
+  athletes: Athlete[];
   canvasRef: React.RefObject<HTMLCanvasElement>;
   formatTime: (seconds: number) => string;
+  swimStartCheckopintId:number;
 }
 
 export default function RaceSimulation({
   template,
-  swimmers,
+  athletes,
   canvasRef,
   formatTime,
+  swimStartCheckopintId,
 }: SimulationTabProps) {
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationTime, setSimulationTime] = useState(0);
-  const startSimulation = () => {
-    setIsSimulating(true);
-    setSimulationTime(0);
-  };
 
-  const pauseSimulation = () => {
-    setIsSimulating(false);
-  };
+    useEffect(() => {
+    let interval: NodeJS.Timeout;
+    return () => clearInterval(interval);
+  }, []);
 
-  const resetSimulation = () => {
-    setIsSimulating(false);
-    setSimulationTime(0);
-  };
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            Live Preview - Swimming
+            Live Preview - Swimming {swimStartCheckopintId}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -60,7 +50,7 @@ export default function RaceSimulation({
                 Simulation Time: {formatTime(500)}
               </p>
               <p className="text-sm text-muted-foreground">
-                Swimming Distance: {template.swim_distance}km (10x speed)
+                Swimming Distance: {template.swim_distance}km
               </p>
             </div>
 
@@ -69,9 +59,10 @@ export default function RaceSimulation({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {swimmers.map((swimmer, index) => {
+              {athletes.map((swimmer, index) => {
+                const swimmerCurrentTime = 2;
                 const timeInMinutes = 600 / 60;
-                const distanceSwum = (timeInMinutes / swimmer.pace) * 100;
+                const distanceSwum = (timeInMinutes / swimmer.predicted_swim_time) * 100;
                 const swimDistance = template.swim_distance * 1000;
                 const progress = Math.min(
                   100,

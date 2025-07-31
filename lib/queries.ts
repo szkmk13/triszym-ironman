@@ -18,19 +18,24 @@ export const queryKeys = {
 };
 
 // Athletes Queries
-export function useAthletes() {
+export function useAthletes(templateId?: number) {
   return useQuery({
-    queryKey: queryKeys.athletes,
+    queryKey: [queryKeys.athletes, templateId], // include templateId in the cache key
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("athletes")
-        .select(
-          `
+        .select(`
           *,
           template:templates(*)
-        `
-        )
+        `)
         .order("created_at", { ascending: false });
+
+      // Apply filter if templateId is provided
+      if (templateId) {
+        query = query.eq("template_id", templateId); // assuming FK column is `template_id`
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as Athlete[];
@@ -81,8 +86,12 @@ export function useTemplate(templateId: number) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("templates")
-        .select("*")
+        .select(`
+          *,
+          swim_checkpoint:template_checkpoints(id)
+        `)
         .eq("id", templateId)
+        .eq("template_checkpoints.checkpoint_type", "swim_start")
         .single();
 
       if (error) throw error;

@@ -30,9 +30,8 @@ export default function RaceDetailPage() {
       .toString()
       .padStart(2, "0")}`;
   };
-  const { data: athletes = [], isLoading: athletesLoading } = useAthletes();
-  const { data: template, isLoading: templateLoading } =
-    useTemplate(templateId);
+  const { data: athletes = [], isLoading: athletesLoading } = useAthletes(templateId);
+  const { data: template, isLoading: templateLoading } =  useTemplate(templateId);
   console.log(template);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   if (templateLoading) {
@@ -50,6 +49,7 @@ export default function RaceDetailPage() {
       </div>
     );
   }
+  const swimStartCheckopintId = template.swim_checkpoint?.[0]?.id 
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -57,14 +57,15 @@ export default function RaceDetailPage() {
 
       <RaceSimulation
         template={template}
-        swimmers={[]}
+        athletes={athletes}
         canvasRef={canvasRef}
         formatTime={formatTime}
+        swimStartCheckopintId={swimStartCheckopintId}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Race Tracker</CardTitle>
+          <CardTitle>Athlete Tracker</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
