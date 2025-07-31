@@ -78,6 +78,17 @@ export function RouteMapsTab({
     return checkpoints.filter((cp) => cp.checkpoint_type.startsWith(currentSegment))
   }
 
+  const getSegmentLaps = (segment: SegmentType): number => {
+    const routeData = template[`${segment}_route_data` as keyof Template] as RouteData
+    return routeData?.laps || 1
+  }
+
+  const getDistancePerLap = (segment: SegmentType): number => {
+    const distance = template[`${segment}_distance` as keyof Template] as number
+    const laps = getSegmentLaps(segment)
+    return distance / laps
+  }
+
   const segmentData = getCurrentSegmentData()
   const segmentCheckpoints = getCurrentSegmentCheckpoints()
 
@@ -111,6 +122,11 @@ export function RouteMapsTab({
                 <Badge variant="outline">
                   <MapPin className="w-3 h-3 mr-1" />
                   {segmentCheckpoints.length} checkpoints
+                </Badge>
+              )}
+              {segmentData?.routeData && (
+                <Badge variant="outline">
+                  {getSegmentLaps(currentSegment)} laps × {getDistancePerLap(currentSegment).toFixed(2)}km
                 </Badge>
               )}
             </div>
@@ -152,6 +168,9 @@ export function RouteMapsTab({
                   <Badge style={{ backgroundColor: segmentData.routeData.color, color: "white" }}>
                     ✓ Route saved for {SEGMENT_NAMES[currentSegment]}
                   </Badge>
+                  <Badge variant="outline">
+                    {segmentData.routeData.laps} lap{segmentData.routeData.laps > 1 ? "s" : ""}
+                  </Badge>
                 </div>
               )}
 
@@ -176,8 +195,9 @@ export function RouteMapsTab({
               )}
 
               <p className="text-sm text-muted-foreground">
-                Click and drag to draw the route for {SEGMENT_NAMES[currentSegment]}. Checkpoints will be automatically
-                positioned based on their distance.
+                Click and drag to draw the route for {SEGMENT_NAMES[currentSegment]}. This represents one lap - athletes
+                will repeat this route {getSegmentLaps(currentSegment)} time
+                {getSegmentLaps(currentSegment) > 1 ? "s" : ""}.
               </p>
             </div>
           )}
@@ -190,6 +210,8 @@ export function RouteMapsTab({
                 const hasMap = template[`${segment}_map_url` as keyof Template]
                 const hasRoute = template[`${segment}_route_data` as keyof Template]
                 const segmentCps = checkpoints.filter((cp) => cp.checkpoint_type.startsWith(segment))
+                const laps = getSegmentLaps(segment)
+                const distancePerLap = getDistancePerLap(segment)
                 return (
                   <Card key={segment} className="p-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -202,6 +224,9 @@ export function RouteMapsTab({
                       </p>
                       <p className={hasRoute ? "text-green-600" : "text-gray-500"}>
                         {hasRoute ? "✓ Route drawn" : "○ No route"}
+                      </p>
+                      <p className="text-blue-600">
+                        {laps} lap{laps > 1 ? "s" : ""} × {distancePerLap.toFixed(2)}km
                       </p>
                       <p className={segmentCps.length > 0 ? "text-blue-600" : "text-gray-500"}>
                         <MapPin className="w-3 h-3 inline mr-1" />

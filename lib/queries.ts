@@ -1,14 +1,21 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { supabase, type Athlete, type Template, type TemplateCheckpoint, type AthleteTime } from "./supabase"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  supabase,
+  type Athlete,
+  type Template,
+  type TemplateCheckpoint,
+  type AthleteTime,
+} from "./supabase";
 
 // Query Keys
 export const queryKeys = {
   athletes: ["athletes"] as const,
   athlete: (id: number) => ["athlete", id] as const,
   templates: ["templates"] as const,
+  template: (templateId: number) => ["template", templateId] as const,
   checkpoints: (templateId: number) => ["checkpoints", templateId] as const,
   athleteTimes: (athleteId: number) => ["athleteTimes", athleteId] as const,
-}
+};
 
 // Athletes Queries
 export function useAthletes() {
@@ -17,16 +24,18 @@ export function useAthletes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("athletes")
-        .select(`
+        .select(
+          `
           *,
           template:templates(*)
-        `)
-        .order("created_at", { ascending: false })
+        `
+        )
+        .order("created_at", { ascending: false });
 
-      if (error) throw error
-      return data as Athlete[]
+      if (error) throw error;
+      return data as Athlete[];
     },
-  })
+  });
 }
 
 export function useAthlete(id: number) {
@@ -35,18 +44,20 @@ export function useAthlete(id: number) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("athletes")
-        .select(`
+        .select(
+          `
           *,
           template:templates(*)
-        `)
+        `
+        )
         .eq("id", id)
-        .single()
+        .single();
 
-      if (error) throw error
-      return data as Athlete
+      if (error) throw error;
+      return data as Athlete;
     },
     enabled: !!id,
-  })
+  });
 }
 
 // Templates Queries
@@ -54,14 +65,32 @@ export function useTemplates() {
   return useQuery({
     queryKey: queryKeys.templates,
     queryFn: async () => {
-      const { data, error } = await supabase.from("templates").select("*").order("name")
+      const { data, error } = await supabase
+        .from("templates")
+        .select("*")
+        .order("name");
 
-      if (error) throw error
-      return data as Template[]
+      if (error) throw error;
+      return data as Template[];
     },
-  })
+  });
 }
+export function useTemplate(templateId: number) {
+  return useQuery({
+    queryKey: queryKeys.template(templateId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("templates")
+        .select("*")
+        .eq("id", templateId)
+        .single();
 
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!templateId,
+  });
+}
 // Checkpoints Queries
 export function useCheckpoints(templateId: number) {
   return useQuery({
@@ -71,13 +100,13 @@ export function useCheckpoints(templateId: number) {
         .from("template_checkpoints")
         .select("*")
         .eq("template_id", templateId)
-        .order("order_index")
+        .order("order_index");
 
-      if (error) throw error
-      return data as TemplateCheckpoint[]
+      if (error) throw error;
+      return data as TemplateCheckpoint[];
     },
     enabled: !!templateId,
-  })
+  });
 }
 
 // Athlete Times Queries
@@ -85,43 +114,50 @@ export function useAthleteTimes(athleteId: number) {
   return useQuery({
     queryKey: queryKeys.athleteTimes(athleteId),
     queryFn: async () => {
-      const { data, error } = await supabase.from("athlete_times").select("*").eq("athlete_id", athleteId)
+      const { data, error } = await supabase
+        .from("athlete_times")
+        .select("*")
+        .eq("athlete_id", athleteId);
 
-      if (error) throw error
-      return data as AthleteTime[]
+      if (error) throw error;
+      return data as AthleteTime[];
     },
     enabled: !!athleteId,
-  })
+  });
 }
 
 // Mutations
 export function useCreateAthlete() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (athlete: {
-      name: string
-      template_id: number
-      predicted_swim_time: string | null
-      predicted_bike_time: string | null
-      predicted_run_time: string | null
-      predicted_t1_time: string | null
-      predicted_t2_time: string | null
+      name: string;
+      template_id: number;
+      predicted_swim_time: string | null;
+      predicted_bike_time: string | null;
+      predicted_run_time: string | null;
+      predicted_t1_time: string | null;
+      predicted_t2_time: string | null;
     }) => {
-      const { data, error } = await supabase.from("athletes").insert(athlete).select().single()
+      const { data, error } = await supabase
+        .from("athletes")
+        .insert(athlete)
+        .select()
+        .single();
 
-      if (error) throw error
-      return data
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.athletes })
-      queryClient.invalidateQueries({ queryKey: queryKeys.templates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.athletes });
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates });
     },
-  })
+  });
 }
 
 export function useRecordTime() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
@@ -129,9 +165,9 @@ export function useRecordTime() {
       checkpoint_id,
       actual_time,
     }: {
-      athlete_id: number
-      checkpoint_id: number
-      actual_time: string
+      athlete_id: number;
+      checkpoint_id: number;
+      actual_time: string;
     }) => {
       const { data, error } = await supabase
         .from("athlete_times")
@@ -141,81 +177,117 @@ export function useRecordTime() {
           actual_time,
         })
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
-      return data
+      if (error) throw error;
+      return data;
     },
     onSuccess: (_, variables) => {
       // Invalidate athlete times for this specific athlete
-      queryClient.invalidateQueries({ queryKey: queryKeys.athleteTimes(variables.athlete_id) })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.athleteTimes(variables.athlete_id),
+      });
       // Also invalidate the athletes list to update progress
-      queryClient.invalidateQueries({ queryKey: queryKeys.athletes })
+      queryClient.invalidateQueries({ queryKey: queryKeys.athletes });
       // Invalidate the specific athlete query
-      queryClient.invalidateQueries({ queryKey: queryKeys.athlete(variables.athlete_id) })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.athlete(variables.athlete_id),
+      });
     },
-  })
+  });
 }
 export function useEditAthleteTime() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
-      id,
-      updates,
-      athlete_id, // Still needed for query invalidation
+      athlete_id,
+      checkpoint_id, // Still needed for query invalidation
+      actual_time,
     }: {
-      id: number
-      athlete_id: number
-      updates: {
-        athlete_id?: number
-        checkpoint_id?: number
-        actual_time?: string
-      }
+      checkpoint_id: number;
+      athlete_id: number;
+      actual_time: Date;
     }) => {
-      console.log(updates)
       const { data, error } = await supabase
         .from("athlete_times")
-        .update(updates)
-        .eq('id', id)
+        .update({ actual_time: actual_time })
+        .eq("athlete_id", athlete_id)
+        .eq("checkpoint_id", checkpoint_id)
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) throw error;
 
-      return data
+      return data;
     },
 
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.athleteTimes(variables.athlete_id) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.athletes })
-      queryClient.invalidateQueries({ queryKey: queryKeys.athlete(variables.athlete_id) })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.athleteTimes(variables.athlete_id),
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.athletes });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.athlete(variables.athlete_id),
+      });
     },
-  })
+  });
+}
+export function useDeleteAthleteTime() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      athlete_time_id,
+      athleteId,
+    }: {
+      athlete_time_id: number;
+      athleteId: number;
+    }) => {
+      const { error } = await supabase
+        .from("athlete_times")
+        .delete()
+        .eq("id", athlete_time_id);
+
+      if (error) throw error;
+
+      return { athlete_time_id, athleteId };
+    },
+
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.athleteTimes(variables.athleteId),
+      });
+    },
+  });
 }
 export function useCreateTemplate() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (template: {
-      name: string
-      swim_distance: number
-      bike_distance: number
-      run_distance: number
+      name: string;
+      swim_distance: number;
+      bike_distance: number;
+      run_distance: number;
     }) => {
-      const { data, error } = await supabase.from("templates").insert(template).select().single()
+      const { data, error } = await supabase
+        .from("templates")
+        .insert(template)
+        .select()
+        .single();
 
-      if (error) throw error
-      return data
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.templates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates });
     },
-  })
+  });
 }
 
 export function useUpdateTemplate() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (template: Template) => {
@@ -229,57 +301,66 @@ export function useUpdateTemplate() {
         })
         .eq("id", template.id)
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
-      return data
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.templates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates });
     },
-  })
+  });
 }
 
 export function useDeleteTemplate() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (templateId: number) => {
-      const { error } = await supabase.from("templates").delete().eq("id", templateId)
+      const { error } = await supabase
+        .from("templates")
+        .delete()
+        .eq("id", templateId);
 
-      if (error) throw error
-      return templateId
+      if (error) throw error;
+      return templateId;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.templates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates });
     },
-  })
+  });
 }
 
 export function useCreateCheckpoint() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (checkpoint: {
-      template_id: number
-      checkpoint_type: string
-      name: string
-      distance_km: number | null
-      order_index: number
+      template_id: number;
+      checkpoint_type: string;
+      name: string;
+      distance_km: number | null;
+      order_index: number;
     }) => {
-      const { data, error } = await supabase.from("template_checkpoints").insert(checkpoint).select().single()
+      const { data, error } = await supabase
+        .from("template_checkpoints")
+        .insert(checkpoint)
+        .select()
+        .single();
 
-      if (error) throw error
-      return data
+      if (error) throw error;
+      return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.checkpoints(data.template_id) })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.checkpoints(data.template_id),
+      });
     },
-  })
+  });
 }
 
 export function useUpdateCheckpoint() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (checkpoint: TemplateCheckpoint) => {
@@ -293,29 +374,42 @@ export function useUpdateCheckpoint() {
         })
         .eq("id", checkpoint.id)
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
-      return data
+      if (error) throw error;
+      return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.checkpoints(data.template_id) })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.checkpoints(data.template_id),
+      });
     },
-  })
+  });
 }
 
 export function useDeleteCheckpoint() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ checkpointId, templateId }: { checkpointId: number; templateId: number }) => {
-      const { error } = await supabase.from("template_checkpoints").delete().eq("id", checkpointId)
+    mutationFn: async ({
+      checkpointId,
+      templateId,
+    }: {
+      checkpointId: number;
+      templateId: number;
+    }) => {
+      const { error } = await supabase
+        .from("template_checkpoints")
+        .delete()
+        .eq("id", checkpointId);
 
-      if (error) throw error
-      return { checkpointId, templateId }
+      if (error) throw error;
+      return { checkpointId, templateId };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.checkpoints(data.templateId) })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.checkpoints(data.templateId),
+      });
     },
-  })
+  });
 }

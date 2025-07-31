@@ -1,11 +1,12 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Athlete, AthleteTime } from "@/lib/supabase"
 import { ArrowLeft, Trophy, Clock, MapPin } from "lucide-react"
 
 interface AthleteHeaderProps {
-  athlete: any
-  swimStartTime: any
+  athlete: Athlete
+  swimStartTime: AthleteTime
   onBack: () => void
 }
 

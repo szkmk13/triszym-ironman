@@ -1,31 +1,31 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckpointForm } from "@/components/admin/checkpoint-form"
-import { CheckpointItem } from "@/components/admin/checkpoint-item"
-import type { TemplateCheckpoint } from "@/lib/supabase"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckpointForm } from "@/components/admin/checkpoint-form";
+import { CheckpointItem } from "@/components/admin/checkpoint-item";
+import type { TemplateCheckpoint } from "@/lib/supabase";
 
-import type React from "react"
+import type React from "react";
 
-import { supabase } from "@/lib/supabase"
-import { toast } from "sonner"
-import { useState } from "react"
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CheckpointsTabProps {
-  templateId: number
-  checkpoints: TemplateCheckpoint[]
-  fetchTemplate: () => void
+  templateId: number;
+  checkpoints: TemplateCheckpoint[];
 }
 
 export function CheckpointsTab({
   templateId,
   checkpoints,
-  fetchTemplate
 }: CheckpointsTabProps) {
-  const [loading, setLoading] = useState(false)
-  
-    const createCheckpoint = async (checkpointData: any) => {
-    setLoading(true)
+  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const createCheckpoint = async (checkpointData: any) => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("template_checkpoints")
@@ -36,22 +36,23 @@ export function CheckpointsTab({
           distance_km: checkpointData.distance_km || null,
           order_index: checkpointData.order_index,
         })
-        .select()
+        .select();
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success("Checkpoint created successfully")
-      await fetchTemplate()
+      toast.success("Checkpoint created successfully");
+      queryClient.invalidateQueries({ queryKey: ["template", templateId] });
+      queryClient.invalidateQueries({ queryKey: ["checkpoints", templateId] });
     } catch (error) {
-      console.error("Error creating checkpoint:", error)
-      toast.error("Failed to create checkpoint")
+      console.error("Error creating checkpoint:", error);
+      toast.error("Failed to create checkpoint");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const updateCheckpoint = async (checkpoint: TemplateCheckpoint) => {
-    setLoading(true)
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from("template_checkpoints")
@@ -62,40 +63,50 @@ export function CheckpointsTab({
           order_index: checkpoint.order_index,
         })
         .eq("id", checkpoint.id)
-        .select()
+        .select();
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success("Checkpoint updated successfully")
-      await fetchTemplate()
+      toast.success("Checkpoint updated successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["template", checkpoint.template_id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["checkpoints", checkpoint.template_id],
+      });
     } catch (error) {
-      console.error("Error updating checkpoint:", error)
-      toast.error("Failed to update checkpoint")
+      console.error("Error updating checkpoint:", error);
+      toast.error("Failed to update checkpoint");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const deleteCheckpoint = async (checkpointId: number) => {
     if (!confirm("Are you sure you want to delete this checkpoint?")) {
-      return
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const { data, error } = await supabase.from("template_checkpoints").delete().eq("id", checkpointId).select()
+      const { data, error } = await supabase
+        .from("template_checkpoints")
+        .delete()
+        .eq("id", checkpointId)
+        .select();
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success("Checkpoint deleted successfully")
-      await fetchTemplate()
+      toast.success("Checkpoint deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["template", templateId] });
+      queryClient.invalidateQueries({ queryKey: ["checkpoints", templateId] });
     } catch (error) {
-      console.error("Error deleting checkpoint:", error)
-      toast.error("Failed to delete checkpoint")
+      console.error("Error deleting checkpoint:", error);
+      toast.error("Failed to delete checkpoint");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   return (
     <div className="space-y-4">
       <Card>
@@ -116,7 +127,9 @@ export function CheckpointsTab({
             ))}
             {checkpoints.length === 0 && (
               <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">No checkpoints defined for this template</p>
+                <p className="text-gray-500 mb-4">
+                  No checkpoints defined for this template
+                </p>
               </div>
             )}
           </div>
@@ -130,5 +143,5 @@ export function CheckpointsTab({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

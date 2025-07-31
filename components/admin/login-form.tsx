@@ -33,7 +33,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   return (
     <div className="container mx-auto p-6 max-w-md">
       <Card>
-        <Button variant="ghost" onClick={() => router.back()}>
+        <Button variant="ghost" onClick={() => router.push("/")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>

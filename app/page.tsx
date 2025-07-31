@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Users, Trophy, Clock, Settings } from "lucide-react";
 import { AthleteListItem } from "@/components/athlete-list-item";
 import Link from "next/link";
+import Navbar from "@/components/navbar";
 
 export default function TriathlonCalculator() {
   const [athletes, setAthletes] = useState<Athlete[]>([]);
@@ -41,23 +42,8 @@ export default function TriathlonCalculator() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold flex items-center justify-center gap-2">
-            <Trophy className="h-8 w-8" />
-            Triathlon Calculator
-          </h1>
-          <p className="text-gray-600">
-            Track your athletes&apos; progress during triathlon races
-          </p>
-        </div>
-        <Link href="/admin">
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Admin
-          </Button>
-        </Link>
-      </div>
+          <Navbar/>
+
 
       <Tabs defaultValue="tracker" className="w-full">
         <TabsList className="grid w-full grid-cols-2">

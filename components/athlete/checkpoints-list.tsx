@@ -4,7 +4,6 @@ import CheckpointItem from "./checkpoint-item"
 interface CheckpointsListProps {
   checkpoints: any[]
   athlete: any
-  athleteTimes: any[]
   getCheckpointTime: (id: number) => any
   swimStartTime: any
   currentTime: string
@@ -15,7 +14,6 @@ interface CheckpointsListProps {
 export default function CheckpointsList({
   checkpoints,
   athlete,
-  athleteTimes,
   getCheckpointTime,
   swimStartTime,
   currentTime,

@@ -102,7 +102,6 @@ export default function AthleteDetailPage() {
       <CheckpointsList
         checkpoints={checkpoints}
         athlete={athlete}
-        athleteTimes={athleteTimes}
         getCheckpointTime={getCheckpointTime}
         swimStartTime={swimStartTime}
         currentTime={currentTime}
