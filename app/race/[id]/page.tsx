@@ -32,8 +32,7 @@ export default function RaceDetailPage() {
   };
   const { data: athletes = [], isLoading: athletesLoading } = useAthletes(templateId);
   const { data: template, isLoading: templateLoading } =  useTemplate(templateId);
-  console.log(template);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // console.log(template);
   if (templateLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -49,8 +48,8 @@ export default function RaceDetailPage() {
       </div>
     );
   }
-  const swimStartCheckopintId = template.swim_checkpoint?.[0]?.id 
-
+  const swimStartCheckpointId = template.swim_checkpoint?.[0]?.id 
+  console.log(template,swimStartCheckpointId)
   return (
     <div className="container mx-auto p-6 space-y-6">
       <RaceHeader template={template} onBack={() => router.back()} />
@@ -58,9 +57,8 @@ export default function RaceDetailPage() {
       <RaceSimulation
         template={template}
         athletes={athletes}
-        canvasRef={canvasRef}
         formatTime={formatTime}
-        swimStartCheckopintId={swimStartCheckopintId}
+        swimStartCheckpointId={swimStartCheckpointId}
       />
 
       <Card>

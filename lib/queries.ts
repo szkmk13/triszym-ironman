@@ -15,6 +15,7 @@ export const queryKeys = {
   template: (templateId: number) => ["template", templateId] as const,
   checkpoints: (templateId: number) => ["checkpoints", templateId] as const,
   athleteTimes: (athleteId: number) => ["athleteTimes", athleteId] as const,
+  athleteTime: (checkpointId: number) => ["athleteTime",checkpointId] as const,
 };
 
 // Athletes Queries
@@ -132,6 +133,24 @@ export function useAthleteTimes(athleteId: number) {
       return data as AthleteTime[];
     },
     enabled: !!athleteId,
+  });
+}
+// Athlete Time Query
+export function useAthleteTimeOnGivenCheckpoint(checkpointId:number) {
+  console.log("chec;",checkpointId)
+  return useQuery({
+    queryKey: queryKeys.athleteTime(checkpointId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("athlete_times")
+        .select("*")
+        .eq("checkpoint_id",checkpointId);
+
+      if (error) throw error;
+      console.log('podczas fetchowania',data)
+      return data as AthleteTime[];
+    },
+    enabled: !!checkpointId,
   });
 }
 
@@ -283,7 +302,6 @@ export function useCreateTemplate() {
       const { data, error } = await supabase
         .from("templates")
         .insert(template)
-        .select()
         .single();
 
       if (error) throw error;
