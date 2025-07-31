@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Edit, Trash2, Save, X } from "lucide-react"
-import type { TemplateCheckpoint } from "@/lib/supabase"
+import type { TemplateCheckpoint } from "@/lib/supabase-utils"
 
 interface CheckpointItemProps {
   checkpoint: TemplateCheckpoint

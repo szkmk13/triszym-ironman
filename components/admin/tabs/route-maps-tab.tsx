@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Palette, Trash2, MapPin } from "lucide-react"
-import type { Template, TemplateCheckpoint, RouteData } from "@/lib/supabase"
+import type { Template, TemplateCheckpoint, RouteData } from "@/lib/supabase-utils"
 
 interface RoutePoint {
   x: number

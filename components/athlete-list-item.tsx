@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { supabase, type Athlete, type TemplateCheckpoint, type AthleteTime } from "@/lib/supabase"
 import { ChevronRight, Clock, Trophy, MapPin } from "lucide-react"
 import Link from "next/link"
+import { Athlete, TemplateCheckpoint, AthleteTime } from "@/lib/supabase-types"
+import { createClient } from "@/lib/supabase/client"
 
 interface AthleteListItemProps {
   athlete: Athlete
@@ -15,6 +16,7 @@ export function AthleteListItem({ athlete }: AthleteListItemProps) {
   const [checkpoints, setCheckpoints] = useState<TemplateCheckpoint[]>([])
   const [athleteTimes, setAthleteTimes] = useState<AthleteTime[]>([])
   const [loading, setLoading] = useState(true)
+  const supabase = createClient()
 
   useEffect(() => {
     fetchData()

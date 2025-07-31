@@ -11,7 +11,7 @@ import {
   TemplateCheckpoint,
   Athlete,
   AthleteTime,
-} from "@/lib/supabase";
+} from "@/lib/supabase-utils";
 import { useDeleteAthleteTime, useEditAthleteTime } from "@/lib/queries";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";

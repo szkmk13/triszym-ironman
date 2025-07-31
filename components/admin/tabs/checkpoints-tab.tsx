@@ -3,11 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckpointForm } from "@/components/admin/checkpoint-form";
 import { CheckpointItem } from "@/components/admin/checkpoint-item";
-import type { TemplateCheckpoint } from "@/lib/supabase";
+import type { TemplateCheckpoint } from "@/lib/supabase-utils";
 
 import type React from "react";
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase-utils";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";

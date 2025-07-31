@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useUpdateTemplate } from "@/lib/queries"
-import type { Template } from "@/lib/supabase"
+import type { Template } from "@/lib/supabase-utils"
 
 interface BasicInfoTabProps {
   template: Template

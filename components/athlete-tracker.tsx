@@ -8,7 +8,7 @@ import {
   type TemplateCheckpoint,
   formatTimeWithSeconds,
   calculateElapsedTime,
-} from "@/lib/supabase"
+} from "@/lib/supabase-utils"
 
 interface AthleteTrackerProps {
   athlete: Athlete

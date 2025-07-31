@@ -1,11 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   supabase,
-  type Athlete,
-  type Template,
-  type TemplateCheckpoint,
-  type AthleteTime,
-} from "./supabase";
+} from "./supabase-utils";
+import { Athlete, Template, TemplateCheckpoint, AthleteTime } from "./supabase-types";
+import { toast } from "sonner";
 
 // Query Keys
 export const queryKeys = {
@@ -137,7 +135,6 @@ export function useAthleteTimes(athleteId: number) {
 }
 // Athlete Time Query
 export function useAthleteTimeOnGivenCheckpoint(checkpointId:number) {
-  console.log("chec;",checkpointId)
   return useQuery({
     queryKey: queryKeys.athleteTime(checkpointId),
     queryFn: async () => {
@@ -309,6 +306,8 @@ export function useCreateTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.templates });
+      toast.success("New template added")
+
     },
   });
 }

@@ -1,59 +1,7 @@
+import { Athlete, Template, TemplateCheckpoint } from "./supabase-types"
 import { createClient } from "./supabase/client"
 
-export { createClient } from "./supabase/client"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-export interface RoutePoint {
-  x: number
-  y: number
-}
-
-export interface RouteData {
-  points: RoutePoint[]
-  color: string
-  laps: number // Number of laps for this route
-}
-
-export type Template = {
-  id: number
-  name: string
-  swim_distance: number
-  bike_distance: number
-  run_distance: number
-}
-
-export type TemplateCheckpoint = {
-  checkpoint_type: string
-  created_at:Date
-  distance_km: number
-  id: number
-  name: string
-  order_index: number
-  template_id: number
-}
-
-export type Athlete = {
-  created_at:Date
-  id: number
-  name: string
-  predicted_bike_time: string | null
-  predicted_run_time: string | null
-  predicted_swim_time: string 
-  predicted_t1_time: string | null
-  predicted_t2_time: string | null
-  template?: Template
-  template_id: number
-}
-
-export type AthleteTime = {
-  id: number
-  athlete_id: number
-  checkpoint_id: number
-  actual_time: string
-}
+export const supabase = createClient()
 
 // Time validation utilities
 export const timeValidation = {

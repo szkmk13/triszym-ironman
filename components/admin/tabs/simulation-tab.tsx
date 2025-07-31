@@ -5,7 +5,7 @@ import type React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Play, Pause, RotateCcw, Upload } from "lucide-react"
-import type { Template } from "@/lib/supabase"
+import { Template } from "@/lib/supabase-types"
 
 interface Swimmer {
   id: string

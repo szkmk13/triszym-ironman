@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { formatTimeWithSeconds, calculatePredictedTotalTime } from "@/lib/supabase"
+import { formatTimeWithSeconds, calculatePredictedTotalTime } from "@/lib/supabase-utils"
 import SegmentAnalysis from "./segment-analysis"
 
 interface PerformanceAnalysisProps {

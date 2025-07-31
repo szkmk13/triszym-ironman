@@ -1,42 +1,28 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus } from "lucide-react";
+import { useCreateTemplate } from "@/lib/queries";
 
-interface TemplateFormProps {
-  onSubmit: (template: {
-    name: string
-    swim_distance: number
-    bike_distance: number
-    run_distance: number
-  }) => void
-  loading: boolean
-}
-
-export function TemplateForm({ onSubmit, loading }: TemplateFormProps) {
+export function TemplateForm() {
+  const mutateCreateTemplate = useCreateTemplate();
   const [newTemplate, setNewTemplate] = useState({
     name: "",
-    swim_distance: 1.5,
-    bike_distance: 40,
-    run_distance: 10,
-  })
+    swim_distance: 1.9,
+    bike_distance: 90,
+    run_distance: 21.0975,
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSubmit(newTemplate)
-    setNewTemplate({
-      name: "",
-      swim_distance: 1.5,
-      bike_distance: 40,
-      run_distance: 10,
-    })
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await mutateCreateTemplate.mutateAsync(newTemplate);
+  };
 
   return (
     <Card>
@@ -54,7 +40,9 @@ export function TemplateForm({ onSubmit, loading }: TemplateFormProps) {
               <Input
                 id="templateName"
                 value={newTemplate.name}
-                onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
+                onChange={(e) =>
+                  setNewTemplate({ ...newTemplate, name: e.target.value })
+                }
                 required
               />
             </div>
@@ -65,7 +53,12 @@ export function TemplateForm({ onSubmit, loading }: TemplateFormProps) {
                 type="number"
                 step="0.1"
                 value={newTemplate.swim_distance}
-                onChange={(e) => setNewTemplate({ ...newTemplate, swim_distance: Number.parseFloat(e.target.value) })}
+                onChange={(e) =>
+                  setNewTemplate({
+                    ...newTemplate,
+                    swim_distance: Number.parseFloat(e.target.value),
+                  })
+                }
                 required
               />
             </div>
@@ -76,7 +69,12 @@ export function TemplateForm({ onSubmit, loading }: TemplateFormProps) {
                 type="number"
                 step="0.1"
                 value={newTemplate.bike_distance}
-                onChange={(e) => setNewTemplate({ ...newTemplate, bike_distance: Number.parseFloat(e.target.value) })}
+                onChange={(e) =>
+                  setNewTemplate({
+                    ...newTemplate,
+                    bike_distance: Number.parseFloat(e.target.value),
+                  })
+                }
                 required
               />
             </div>
@@ -87,17 +85,22 @@ export function TemplateForm({ onSubmit, loading }: TemplateFormProps) {
                 type="number"
                 step="0.1"
                 value={newTemplate.run_distance}
-                onChange={(e) => setNewTemplate({ ...newTemplate, run_distance: Number.parseFloat(e.target.value) })}
+                onChange={(e) =>
+                  setNewTemplate({
+                    ...newTemplate,
+                    run_distance: Number.parseFloat(e.target.value),
+                  })
+                }
                 required
               />
             </div>
           </div>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={mutateCreateTemplate.isPending}>
             <Plus className="h-4 w-4 mr-2" />
             Create Template
           </Button>
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -4,7 +4,7 @@ import {
   calculateSwimPace,
   calculateBikeSpeed,
   calculateRunPace,
-} from "@/lib/supabase"
+} from "@/lib/supabase-utils"
 
 interface SegmentAnalysisProps {
   type: "swim" | "bike" | "run" | "total"

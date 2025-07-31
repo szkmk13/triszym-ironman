@@ -1,19 +1,14 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useRef, useState } from "react";
-import type { AthleteTime } from "@/lib/supabase"; // Add this import
+import { calculateSwimPace } from "@/lib/supabase-utils"; // Add this import
 import { useAthleteTimeOnGivenCheckpoint } from "@/lib/queries"; // Add this import
-
-// Types
-interface Athlete {
-  id: string;
-  name: string;
-  predicted_swim_time: number; // in minutes
-}
-
-interface Template {
-  swim_distance: number; // in km
-}
+import {
+  Athlete,
+  AthleteTime,
+  RoutePoint,
+  Template,
+} from "@/lib/supabase-types";
 
 interface Swimmer extends Athlete {
   startTime?: Date;
@@ -24,41 +19,37 @@ interface Swimmer extends Athlete {
   hasStarted: boolean;
 }
 
-interface CheckpointData extends AthleteTime {
-  // This now matches your AthleteTime type
-}
-
-interface RoutePoint {
-  x: number;
-  y: number;
-}
-
 interface SimulationTabProps {
   template: Template;
   athletes: Athlete[];
-  formatTime: (seconds: number) => string;
   swimStartCheckpointId: number;
+  mapImageUrl?: string;
+  routePoints?: RoutePoint[];
 }
 
 export default function RaceSimulation({
   template,
   athletes,
-  formatTime,
   swimStartCheckpointId,
 }: SimulationTabProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [swimmers, setSwimmers] = useState<Swimmer[]>([]);
   const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null);
-  const routePoints = template?.swim_route_data?.points;
-  const mapImageUrl = template.swim_map_url;
+
+  // At the top of the component, add these fallback values
+  const routePoints = template?.swim_route_data?.points || [];
+  const mapImageUrl =
+    template?.swim_map_url ||
+    "/placeholder.svg?height=600&width=800&text=Swimming+Route+Map";
+
   // Use the custom hook to fetch athlete times for the checkpoint
   const {
     data: athleteCheckpointData,
     isLoading,
     error,
   } = useAthleteTimeOnGivenCheckpoint(swimStartCheckpointId);
+
   // Load map image
   useEffect(() => {
     const img = new Image();
@@ -68,7 +59,10 @@ export default function RaceSimulation({
     };
     img.src = mapImageUrl;
   }, [mapImageUrl]);
-
+  function durationToSeconds(duration: string): number {
+    const [hours, minutes, seconds] = duration.split(":").map(Number);
+    return hours * 3600 + minutes * 60 + seconds;
+  }
   // Update current time every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -83,6 +77,11 @@ export default function RaceSimulation({
     athlete: Athlete,
     checkpointData: AthleteTime | undefined
   ) => {
+    console.log(`Calculating position for ${athlete.name}:`, {
+      checkpointData,
+      hasActualTime: !!checkpointData?.actual_time,
+    });
+
     if (!checkpointData?.actual_time) {
       return {
         currentPosition: 0,
@@ -94,6 +93,13 @@ export default function RaceSimulation({
 
     const startTime = new Date(checkpointData.actual_time);
     const hasStarted = currentTime >= startTime;
+
+    console.log(`Time comparison for ${athlete.name}:`, {
+      startTime: startTime.toISOString(),
+      currentTime: currentTime.toISOString(),
+      hasStarted,
+      timeDifferenceMs: currentTime.getTime() - startTime.getTime(),
+    });
 
     if (!hasStarted) {
       return {
@@ -109,7 +115,7 @@ export default function RaceSimulation({
       (currentTime.getTime() - startTime.getTime()) / 1000;
 
     // Calculate distance based on athlete's predicted pace
-    const totalSwimTimeSeconds = athlete.predicted_swim_time * 60;
+    const totalSwimTimeSeconds = durationToSeconds(athlete.predicted_swim_time);
     const totalSwimDistance = template.swim_distance * 1000; // Convert km to meters
 
     // Current distance swum based on time elapsed and predicted pace
@@ -119,6 +125,15 @@ export default function RaceSimulation({
     );
 
     const isActive = distanceSwum < totalSwimDistance && distanceSwum > 0;
+
+    console.log(`Distance calculation for ${athlete.name}:`, {
+      timeSwimmingSeconds,
+      totalSwimTimeSeconds,
+      totalSwimDistance,
+      distanceSwum,
+      isActive,
+      progress: (distanceSwum / totalSwimDistance) * 100,
+    });
 
     return {
       currentPosition: 0, // Will be calculated after all swimmers are processed
@@ -133,8 +148,8 @@ export default function RaceSimulation({
     swimmer: Swimmer,
     routePoints: RoutePoint[]
   ) => {
-    if (!swimmer.hasStarted || routePoints.length < 2) {
-      return routePoints[0] || { x: 0, y: 0 };
+    if (!swimmer.hasStarted || !routePoints || routePoints.length < 2) {
+      return routePoints?.[0] || { x: 0, y: 0 };
     }
 
     const totalDistance = template.swim_distance * 1000;
@@ -158,7 +173,13 @@ export default function RaceSimulation({
 
   // Canvas drawing effect
   useEffect(() => {
-    if (!canvasRef.current || !mapImage) return;
+    if (
+      !canvasRef.current ||
+      !mapImage ||
+      !routePoints ||
+      routePoints.length === 0
+    )
+      return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -219,7 +240,7 @@ export default function RaceSimulation({
     }
 
     // Draw swimmers
-    swimmers.forEach((swimmer, index) => {
+    swimmers.forEach((swimmer) => {
       if (!swimmer.hasStarted) return;
 
       const position = calculateSwimmerCanvasPosition(swimmer, routePoints);
@@ -257,8 +278,7 @@ export default function RaceSimulation({
     });
   }, [mapImage, swimmers, routePoints, currentTime]);
 
-  // Set up swimmers with positions and colors
-  console.log("athleteCheckpointData", athleteCheckpointData);
+  //   Set up swimmers with positions and colors
   useEffect(() => {
     if (athleteCheckpointData && athletes.length > 0) {
       const colors = [
@@ -272,13 +292,24 @@ export default function RaceSimulation({
 
       // Calculate each swimmer's data
       const swimmersWithData = athletes.map((athlete, index) => {
+        // Convert athlete.id to number for comparison
         const athleteCheckpoint = athleteCheckpointData.find(
-          (checkpoint) => checkpoint.athlete_id === athlete.id
+          (checkpoint) => checkpoint.athlete_id === Number(athlete.id)
         );
+
+        console.log(`Athlete ${athlete.name} (ID: ${athlete.id}):`, {
+          athleteCheckpoint,
+          foundMatch: !!athleteCheckpoint,
+          actualTime: athleteCheckpoint?.actual_time,
+          currentTime: currentTime.toISOString(),
+        });
+
         const positionData = calculateSwimmerPosition(
           athlete,
           athleteCheckpoint
         );
+
+        console.log(`Position data for ${athlete.name}:`, positionData);
 
         return {
           ...athlete,
@@ -289,6 +320,8 @@ export default function RaceSimulation({
           ...positionData,
         };
       });
+
+      console.log("Swimmers with data:", swimmersWithData);
 
       // Sort by distance to determine positions (furthest distance = 1st place)
       const sortedByDistance = [...swimmersWithData].sort(
@@ -307,15 +340,7 @@ export default function RaceSimulation({
 
       setSwimmers(swimmersWithPositions);
     }
-  }, [athleteCheckpointData, athletes, currentTime]);
-
-  // Calculate total distance covered by all active swimmers
-  const totalDistanceCovered = swimmers.reduce(
-    (total, swimmer) => total + swimmer.distanceSwum,
-    0
-  );
-  const averageDistance =
-    swimmers.length > 0 ? totalDistanceCovered / swimmers.length : 0;
+  }, [athleteCheckpointData, athletes, currentTime, routePoints, template]);
 
   if (isLoading) {
     return (
@@ -342,7 +367,7 @@ export default function RaceSimulation({
       </div>
     );
   }
-  console.log("su=wimmers", swimmers);
+
   return (
     <div className="space-y-4">
       <Card>
@@ -356,13 +381,6 @@ export default function RaceSimulation({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="text-center">
-              <p className="text-lg font-semibold">
-                Average Distance: {Math.round(averageDistance)}m /{" "}
-                {template.swim_distance * 1000}m
-              </p>
-            </div>
-
             <div className="border rounded-lg overflow-hidden bg-gray-50">
               <canvas ref={canvasRef} className="max-w-full h-auto" />
             </div>
@@ -378,7 +396,7 @@ export default function RaceSimulation({
                   const totalDistance = template.swim_distance * 1000;
                   const progress = (swimmer.distanceSwum / totalDistance) * 100;
                   const isFinished = progress >= 100;
-                  console.log(totalDistance, progress, isFinished);
+
                   return (
                     <Card
                       key={swimmer.id}
@@ -432,12 +450,10 @@ export default function RaceSimulation({
                             <div className="flex justify-between text-sm">
                               <span>Current Pace:</span>
                               <span className="font-mono">
-                                {swimmer.predicted_swim_time
-                                  ? (
-                                      (swimmer.predicted_swim_time * 60) /
-                                      (template.swim_distance * 10)
-                                    ).toFixed(1)
-                                  : "—"}{" "}
+                                {calculateSwimPace(
+                                  swimmer.predicted_swim_time,
+                                  template.swim_distance
+                                )}
                                 min/100m
                               </span>
                             </div>

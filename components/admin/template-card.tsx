@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2 } from "lucide-react"
-import type { Template } from "@/lib/supabase"
+import type { Template } from "@/lib/supabase-utils"
 
 interface TemplateCardProps {
   template: Template
