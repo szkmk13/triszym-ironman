@@ -38,7 +38,7 @@ interface RouteMapsTabProps {
   onSegmentChange: (segment: SegmentType) => void
   mapImages: { [key in SegmentType]?: HTMLImageElement }
   currentRoute: RoutePoint[]
-  canvasRef: React.RefObject<HTMLCanvasElement>|null
+  canvasRef: React.RefObject<HTMLCanvasElement|null>
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
   onCanvasMouseDown: (event: React.MouseEvent<HTMLCanvasElement>) => void
   onCanvasMouseMove: (event: React.MouseEvent<HTMLCanvasElement>) => void

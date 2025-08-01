@@ -181,6 +181,7 @@ export default function TemplateEditPage() {
   // Canvas drawing effect
   useEffect(() => {
     if (canvasRef.current && mapImages[currentSegment]) {
+      if (!localTemplate){return}
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
       const mapImage = mapImages[currentSegment];
