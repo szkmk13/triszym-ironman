@@ -28,7 +28,7 @@ export function TemplateListItem({ template }: TemplateListItemProps) {
             {checkpoints.length} Checkpoints
           </Badge>
         </div>
-        <Link href={`/template/${template.id}`}>
+        <Link href={`/race/${template.id}`}>
           <Button variant="ghost" size="sm">
             <ChevronRight className="h-4 w-4" />
           </Button>
