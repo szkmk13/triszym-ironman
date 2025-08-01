@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState, useRef, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -14,7 +14,6 @@ import { RouteMapsTab } from "@/components/admin/tabs/route-maps-tab";
 import { CheckpointsTab } from "@/components/admin/tabs/checkpoints-tab";
 import Link from "next/link";
 import { useCheckpoints, useTemplate, useUpdateTemplate } from "@/lib/queries";
-import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Template, RouteData, TemplateCheckpoint, RoutePoint } from "@/lib/supabase-types";
 import { supabase } from "@/lib/supabase-utils";
@@ -479,7 +478,7 @@ export default function TemplateEditPage() {
     const fileName = `template-${templateId}-${segment}-${Date.now()}.${fileExt}`;
     const filePath = `maps/${fileName}`;
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from("triathlon-maps")
       .upload(filePath, file, {
         cacheControl: "3600",
