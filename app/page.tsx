@@ -4,7 +4,6 @@ import { AthleteForm } from "@/components/athlete-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Clock } from "lucide-react";
-import { AthleteListItem } from "@/components/athlete-list-item";
 import Navbar from "@/components/navbar";
 import { useAthletes, useTemplates } from "@/lib/queries";
 import { TemplateListItem } from "@/components/template-list-item";

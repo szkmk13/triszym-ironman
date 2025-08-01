@@ -1,3 +1,4 @@
+import { Athlete, AthleteTime, TemplateCheckpoint } from "@/lib/supabase-types"
 import {
   calculateElapsedTime,
   formatTimeWithSeconds,
@@ -8,10 +9,10 @@ import {
 
 interface SegmentAnalysisProps {
   type: "swim" | "bike" | "run" | "total"
-  athlete: any
-  checkpoints: any[]
-  getCheckpointTime: (id: number) => any
-  swimStartTime: any
+  athlete: Athlete
+  checkpoints: TemplateCheckpoint[]
+  getCheckpointTime: (id: number) => AthleteTime|undefined
+  swimStartTimeString: string|undefined
   getTimeDifference: (predicted: string, actual: string) => string
   getTimeDifferenceColor: (predicted: string, actual: string) => string
   predictedTotalTime?: string
@@ -47,7 +48,7 @@ export default function SegmentAnalysis({
   athlete,
   checkpoints,
   getCheckpointTime,
-  swimStartTime,
+  swimStartTimeString,
   getTimeDifference,
   getTimeDifferenceColor,
   predictedTotalTime,
@@ -57,8 +58,8 @@ export default function SegmentAnalysis({
     const swimFinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "swim_finish")
     const swimFinishTime = swimFinishCheckpoint ? getCheckpointTime(swimFinishCheckpoint.id) : null
 
-    if (swimFinishTime && swimStartTime) {
-      const actualSwimTime = calculateElapsedTime(swimStartTime.actual_time, swimFinishTime.actual_time)
+    if (swimFinishTime && swimStartTimeString) {
+      const actualSwimTime = calculateElapsedTime(swimStartTimeString, swimFinishTime.actual_time)
       if (actualSwimTime && athlete.predicted_swim_time) {
         return getTimeDifferenceInSeconds(athlete.predicted_swim_time, actualSwimTime)
       }
@@ -87,12 +88,12 @@ export default function SegmentAnalysis({
         const swimFinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "swim_finish")
         const swimFinishTime = swimFinishCheckpoint ? getCheckpointTime(swimFinishCheckpoint.id) : null
         const actualTime =
-          swimFinishTime && swimStartTime
-            ? calculateElapsedTime(swimStartTime.actual_time, swimFinishTime.actual_time)
+          swimFinishTime && swimStartTimeString
+            ? calculateElapsedTime(swimStartTimeString, swimFinishTime.actual_time)
             : null
         const totalElapsed =
-          swimFinishTime && swimStartTime
-            ? calculateElapsedTime(swimStartTime.actual_time, swimFinishTime.actual_time)
+          swimFinishTime && swimStartTimeString
+            ? calculateElapsedTime(swimStartTimeString, swimFinishTime.actual_time)
             : null
 
         return {
@@ -117,7 +118,7 @@ export default function SegmentAnalysis({
         const t2Time = t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
         const actualTime = t1Time && t2Time ? calculateElapsedTime(t1Time.actual_time, t2Time.actual_time) : null
         const totalElapsed =
-          t2Time && swimStartTime ? calculateElapsedTime(swimStartTime.actual_time, t2Time.actual_time) : null
+          t2Time && swimStartTimeString ? calculateElapsedTime(swimStartTimeString, t2Time.actual_time) : null
 
         return {
           title: "Bike",
@@ -142,7 +143,7 @@ export default function SegmentAnalysis({
         const actualTime =
           t2Time && finishTime ? calculateElapsedTime(t2Time.actual_time, finishTime.actual_time) : null
         const totalElapsed =
-          finishTime && swimStartTime ? calculateElapsedTime(swimStartTime.actual_time, finishTime.actual_time) : null
+          finishTime && swimStartTimeString ? calculateElapsedTime(swimStartTimeString, finishTime.actual_time) : null
 
         return {
           title: "Run",
@@ -163,7 +164,7 @@ export default function SegmentAnalysis({
         const finishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "finish")
         const finishTime = finishCheckpoint ? getCheckpointTime(finishCheckpoint.id) : null
         const actualTime =
-          finishTime && swimStartTime ? calculateElapsedTime(swimStartTime.actual_time, finishTime.actual_time) : null
+          finishTime && swimStartTimeString ? calculateElapsedTime(swimStartTimeString, finishTime.actual_time) : null
 
         const swimDiff = getSwimDifference()
         const bikeDiff = getBikeDifference()

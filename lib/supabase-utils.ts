@@ -96,7 +96,10 @@ export function formatTimeWithSeconds(timeString: string | null): string {
   }
 }
 
-export function calculateElapsedTime(startTime: string, endTime: string): string {
+export function calculateElapsedTime(startTime: string|undefined, endTime: string): string {
+  if (!startTime){
+    return ""
+  }
   const start = new Date(startTime)
   const end = new Date(endTime)
   const diff = end.getTime() - start.getTime()

@@ -81,29 +81,29 @@ export default function AthleteDetailPage() {
   }
 
   const swimStartTime = getSwimStartTime()
+  const swimStartTimeString = swimStartTime?.actual_time 
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <AthleteHeader athlete={athlete} swimStartTime={swimStartTime} onBack={() => router.back()} />
+      <AthleteHeader athlete={athlete} swimStartTimeString={swimStartTimeString} onBack={() => router.back()} />
 
       <PerformanceAnalysis
         athlete={athlete}
         checkpoints={checkpoints}
         getCheckpointTime={getCheckpointTime}
-        swimStartTime={swimStartTime}
+        swimStartTimeString={swimStartTimeString}
       />
 
       <TimeRecorder
         currentTime={currentTime}
         setCurrentTime={setCurrentTime}
-        isRecording={recordTimeMutation.isPending}
       />
 
       <CheckpointsList
         checkpoints={checkpoints}
         athlete={athlete}
         getCheckpointTime={getCheckpointTime}
-        swimStartTime={swimStartTime}
+        swimStartTimeString={swimStartTimeString}
         currentTime={currentTime}
         onRecordTime={recordTime}
         isRecording={recordTimeMutation.isPending}

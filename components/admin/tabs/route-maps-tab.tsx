@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Palette, Trash2, MapPin } from "lucide-react"
-import type { Template, TemplateCheckpoint, RouteData } from "@/lib/supabase-utils"
+import { RouteData, Template, TemplateCheckpoint } from "@/lib/supabase-types"
 
 interface RoutePoint {
   x: number
@@ -38,7 +38,7 @@ interface RouteMapsTabProps {
   onSegmentChange: (segment: SegmentType) => void
   mapImages: { [key in SegmentType]?: HTMLImageElement }
   currentRoute: RoutePoint[]
-  canvasRef: React.RefObject<HTMLCanvasElement>
+  canvasRef: React.RefObject<HTMLCanvasElement>|null
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
   onCanvasMouseDown: (event: React.MouseEvent<HTMLCanvasElement>) => void
   onCanvasMouseMove: (event: React.MouseEvent<HTMLCanvasElement>) => void

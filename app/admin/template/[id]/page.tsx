@@ -37,9 +37,9 @@ type SegmentType = "swim" | "bike" | "run";
 
 export default function TemplateEditPage() {
   const params = useParams();
-  const router = useRouter();
+  // const router = useRouter();
   const templateId = Number(params.id);
-  const queryClient = useQueryClient();
+  // const queryClient = useQueryClient();
 
   const { data: checkpoints = [] } = useCheckpoints(templateId || 0);
   const { data: template } = useTemplate(templateId || 0);
@@ -56,10 +56,6 @@ export default function TemplateEditPage() {
   const [imageFiles, setImageFiles] = useState<{ [key in SegmentType]?: File }>(
     {}
   );
-
-  // Simulation state
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationTime, setSimulationTime] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -363,31 +359,6 @@ export default function TemplateEditPage() {
         ctx.setLineDash([]);
       }
 
-      // Draw swimmers for swim segment simulation
-      if (isSimulating && currentSegment === "swim" && routeData) {
-        swimmers.forEach((swimmer, index) => {
-          const position = calculateSwimmerPosition(swimmer, routeData);
-
-          // Draw swimmer dot
-          ctx.fillStyle = swimmer.color;
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(position.x * scale, position.y * scale, 10, 0, 2 * Math.PI);
-          ctx.fill();
-          ctx.stroke();
-
-          // Draw swimmer number
-          ctx.fillStyle = "#ffffff";
-          ctx.font = "bold 12px Arial";
-          ctx.textAlign = "center";
-          ctx.fillText(
-            (index + 1).toString(),
-            position.x * scale,
-            position.y * scale + 4
-          );
-        });
-      }
     }
   }, [
     mapImages,
@@ -395,8 +366,6 @@ export default function TemplateEditPage() {
     currentRoute,
     localTemplate,
     checkpoints,
-    isSimulating,
-    simulationTime,
   ]);
 
   const handleImageUpload = async (
@@ -500,47 +469,7 @@ export default function TemplateEditPage() {
     toast.success(`Route cleared for ${currentSegment}`);
   };
 
-  const calculateSwimmerPosition = (
-    swimmer: Swimmer,
-    routeData: RouteData
-  ): RoutePoint => {
-    if (!routeData || routeData.points.length < 2) {
-      return { x: 50, y: 50 };
-    }
 
-    if (!localTemplate) return { x: 50, y: 50 };
-
-    // Calculate distance swum based on pace and time
-    const timeInMinutes = simulationTime / 60;
-    const distanceSwum = (timeInMinutes / swimmer.pace) * 100; // meters
-    const swimDistance = localTemplate.swim_distance * 1000; // convert km to meters
-
-    // Calculate progress (0-1) in total distance
-    const totalProgress = Math.min(1, distanceSwum / swimDistance);
-
-    // Calculate progress considering laps
-    const laps = routeData.laps || 1;
-    const progressWithLaps = (totalProgress * laps) % 1; // This gives us position within current lap
-
-    // Find position on route (single lap)
-    const totalPoints = routeData.points.length;
-    const targetIndex = Math.floor(progressWithLaps * (totalPoints - 1));
-    const nextIndex = Math.min(targetIndex + 1, totalPoints - 1);
-
-    if (targetIndex === nextIndex) {
-      return routeData.points[targetIndex];
-    }
-
-    // Interpolate between points
-    const t = progressWithLaps * (totalPoints - 1) - targetIndex;
-    const current = routeData.points[targetIndex];
-    const next = routeData.points[nextIndex];
-
-    return {
-      x: current.x + (next.x - current.x) * t,
-      y: current.y + (next.y - current.y) * t,
-    };
-  };
 
   const uploadMapImage = async (
     file: File,
@@ -570,7 +499,7 @@ export default function TemplateEditPage() {
     if (!localTemplate) return;
 
     try {
-      const updateData: any = {
+      const updateData: Template = {
         ...localTemplate,
         id: templateId,
       };

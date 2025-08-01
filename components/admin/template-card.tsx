@@ -1,8 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Template } from "@/lib/supabase-types"
 import { Edit, Trash2 } from "lucide-react"
-import type { Template } from "@/lib/supabase-utils"
 
 interface TemplateCardProps {
   template: Template

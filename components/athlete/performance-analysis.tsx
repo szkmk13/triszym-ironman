@@ -1,19 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatTimeWithSeconds, calculatePredictedTotalTime } from "@/lib/supabase-utils"
 import SegmentAnalysis from "./segment-analysis"
+import { Athlete, AthleteTime,TemplateCheckpoint } from "@/lib/supabase-types"
 
 interface PerformanceAnalysisProps {
-  athlete: any
-  checkpoints: any[]
-  getCheckpointTime: (id: number) => any
-  swimStartTime: any
+  athlete: Athlete
+  checkpoints: TemplateCheckpoint[]
+  getCheckpointTime: (id: number) => AthleteTime|undefined
+  swimStartTimeString: string|undefined
 }
 
 export default function PerformanceAnalysis({
   athlete,
   checkpoints,
   getCheckpointTime,
-  swimStartTime,
+  swimStartTimeString,
 }: PerformanceAnalysisProps) {
   const parseTimeToSeconds = (timeStr: string): number => {
     const formattedTime = formatTimeWithSeconds(timeStr)
@@ -48,7 +49,7 @@ export default function PerformanceAnalysis({
   }
 
   const getEstimatedFinishTime = () => {
-    if (!swimStartTime || !athlete) return null
+    if (!swimStartTimeString || !athlete) return null
     const finishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "finish")
     const finishTime = finishCheckpoint ? getCheckpointTime(finishCheckpoint.id) : null
 
@@ -57,7 +58,7 @@ export default function PerformanceAnalysis({
     if (predictedTotalSeconds === 0) return null
     console.log(predictedTotalSeconds)
 
-    const startTime = new Date(swimStartTime.actual_time)
+    const startTime = new Date(swimStartTimeString)
     const estimatedFinishTime = new Date(startTime.getTime() + predictedTotalSeconds * 1000)
     return estimatedFinishTime.toLocaleTimeString("en-GB", { hour12: false })
   }
@@ -79,7 +80,7 @@ export default function PerformanceAnalysis({
               athlete={athlete}
               checkpoints={checkpoints}
               getCheckpointTime={getCheckpointTime}
-              swimStartTime={swimStartTime}
+              swimStartTimeString={swimStartTimeString}
               getTimeDifference={getTimeDifference}
               getTimeDifferenceColor={getTimeDifferenceColor}
             />
@@ -92,7 +93,7 @@ export default function PerformanceAnalysis({
               athlete={athlete}
               checkpoints={checkpoints}
               getCheckpointTime={getCheckpointTime}
-              swimStartTime={swimStartTime}
+              swimStartTimeString={swimStartTimeString}
               getTimeDifference={getTimeDifference}
               getTimeDifferenceColor={getTimeDifferenceColor}
             />
@@ -105,7 +106,7 @@ export default function PerformanceAnalysis({
               athlete={athlete}
               checkpoints={checkpoints}
               getCheckpointTime={getCheckpointTime}
-              swimStartTime={swimStartTime}
+              swimStartTimeString={swimStartTimeString}
               getTimeDifference={getTimeDifference}
               getTimeDifferenceColor={getTimeDifferenceColor}
             />
@@ -118,7 +119,7 @@ export default function PerformanceAnalysis({
               athlete={athlete}
               checkpoints={checkpoints}
               getCheckpointTime={getCheckpointTime}
-              swimStartTime={swimStartTime}
+              swimStartTimeString={swimStartTimeString}
               getTimeDifference={getTimeDifference}
               getTimeDifferenceColor={getTimeDifferenceColor}
               predictedTotalTime={predictedTotalTime}

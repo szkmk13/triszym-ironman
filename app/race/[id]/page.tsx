@@ -14,8 +14,7 @@ export default function RaceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const templateId = Number.parseInt(params.id as string);
-  const { data: athletes = [], isLoading: athletesLoading } =
-    useAthletes(templateId);
+  const { data: athletes = [], isLoading: athletesLoading } = useAthletes(templateId);
   const { data: template, isLoading: templateLoading } =
     useTemplate(templateId);
   if (templateLoading || athletesLoading) {

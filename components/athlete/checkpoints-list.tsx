@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import CheckpointItem from "./checkpoint-item"
+import { Athlete, AthleteTime, TemplateCheckpoint } from "@/lib/supabase-types"
 
 interface CheckpointsListProps {
-  checkpoints: any[]
-  athlete: any
-  getCheckpointTime: (id: number) => any
-  swimStartTime: any
+  checkpoints: TemplateCheckpoint[]
+  athlete: Athlete
+  getCheckpointTime: (id: number) => AthleteTime|undefined
+  swimStartTimeString: string|undefined
   currentTime: string
   onRecordTime: (checkpointId: number, timeString?: string) => void
   isRecording: boolean
@@ -15,7 +16,7 @@ export default function CheckpointsList({
   checkpoints,
   athlete,
   getCheckpointTime,
-  swimStartTime,
+  swimStartTimeString,
   currentTime,
   onRecordTime,
   isRecording,
@@ -34,7 +35,7 @@ export default function CheckpointsList({
               athlete={athlete}
               checkpoints={checkpoints}
               getCheckpointTime={getCheckpointTime}
-              swimStartTime={swimStartTime}
+              swimStartTimeString={swimStartTimeString}
               currentTime={currentTime}
               onRecordTime={onRecordTime}
               isRecording={isRecording}

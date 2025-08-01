@@ -8,20 +8,18 @@ import { CheckCircle, Edit2, Save, X, Trash2 } from "lucide-react";
 import {
   calculateElapsedTime,
   calculateCheckpointPace,
-  TemplateCheckpoint,
-  Athlete,
-  AthleteTime,
 } from "@/lib/supabase-utils";
 import { useDeleteAthleteTime, useEditAthleteTime } from "@/lib/queries";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { TemplateCheckpoint, Athlete, AthleteTime } from "@/lib/supabase-types";
 
 interface CheckpointItemProps {
   checkpoint: TemplateCheckpoint;
   athlete: Athlete;
   checkpoints: TemplateCheckpoint[];
-  getCheckpointTime: (id: number) => AthleteTime;
-  swimStartTime: AthleteTime;
+  getCheckpointTime: (id: number) => AthleteTime|undefined
+  swimStartTimeString: string|undefined;
   currentTime: string;
   onRecordTime: (checkpointId: number, timeString?: string) => void;
   isRecording: boolean;
@@ -32,7 +30,7 @@ export default function CheckpointItem({
   athlete,
   checkpoints,
   getCheckpointTime,
-  swimStartTime,
+  swimStartTimeString,
   currentTime,
   onRecordTime,
   isRecording,
@@ -48,7 +46,7 @@ export default function CheckpointItem({
   const time = getCheckpointTime(checkpoint.id);
   const isCompleted = !!time;
   const elapsedTime = time
-    ? calculateElapsedTime(swimStartTime?.actual_time, time.actual_time)
+    ? calculateElapsedTime(swimStartTimeString, time.actual_time)
     : "--:--:--";
 
   const getCheckpointColor = (checkpoint: TemplateCheckpoint) => {

@@ -32,10 +32,17 @@ export function useAthletes(templateId?: number) {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Filter if templateId is provided
+      const filteredData = templateId
+        ? data?.filter((athlete) => athlete.template_id === templateId)
+        : data;
+
+      return filteredData;
     },
   });
 }
+
 
 
 export function useAthlete(id: number) {
@@ -171,7 +178,7 @@ export function useCreateAthlete() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.athletes });
+      queryClient.invalidateQueries({ queryKey: queryKeys.athletes() });
       queryClient.invalidateQueries({ queryKey: queryKeys.templates });
     },
   });
@@ -209,7 +216,7 @@ export function useRecordTime() {
         queryKey: queryKeys.athleteTimes(variables.athlete_id),
       });
       // Also invalidate the athletes list to update progress
-      queryClient.invalidateQueries({ queryKey: queryKeys.athletes });
+      queryClient.invalidateQueries({ queryKey: queryKeys.athletes() });
       // Invalidate the specific athlete query
       queryClient.invalidateQueries({
         queryKey: queryKeys.athlete(variables.athlete_id),
@@ -247,7 +254,7 @@ export function useEditAthleteTime() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.athleteTimes(variables.athlete_id),
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.athletes });
+      queryClient.invalidateQueries({ queryKey: queryKeys.athletes() });
       queryClient.invalidateQueries({
         queryKey: queryKeys.athlete(variables.athlete_id),
       });
@@ -413,24 +420,18 @@ export function useDeleteCheckpoint() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      checkpointId,
-      templateId,
-    }: {
-      checkpointId: number;
-      templateId: number;
-    }) => {
+    mutationFn: async (checkpoint: TemplateCheckpoint) => {
       const { error } = await supabase
         .from("template_checkpoints")
         .delete()
-        .eq("id", checkpointId);
+        .eq("id", checkpoint.id);
 
       if (error) throw error;
-      return { checkpointId, templateId };
+      return { checkpoint };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.checkpoints(data.templateId),
+        queryKey: queryKeys.checkpoints(data.checkpoint.template_id),
       });
     },
   });

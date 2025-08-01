@@ -8,10 +8,9 @@ import { Play } from "lucide-react"
 interface TimeRecorderProps {
   currentTime: string
   setCurrentTime: (time: string) => void
-  isRecording: boolean
 }
 
-export default function TimeRecorder({ currentTime, setCurrentTime, isRecording }: TimeRecorderProps) {
+export default function TimeRecorder({ currentTime, setCurrentTime }: TimeRecorderProps) {
   const handleSetCurrentTime = () => {
     const now = new Date()
     const timeString = now.toTimeString().slice(0, 8)
@@ -37,7 +36,7 @@ export default function TimeRecorder({ currentTime, setCurrentTime, isRecording 
             Now
           </Button>
         </div>
-        <p className="text-xs text-gray-500 mt-1">Enter time in HH:MM:SS format or click "Now" for current time</p>
+        <p className="text-xs text-gray-500 mt-1">Enter time in HH:MM:SS format or click &quot;Now&quot; for current time</p>
       </CardContent>
     </Card>
   )
