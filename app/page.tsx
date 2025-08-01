@@ -11,8 +11,6 @@ import { TemplateListItem } from "@/components/template-list-item";
 export default function TriathlonCalculator() {
   const { data: athletes = [], isLoading: athletesLoading } = useAthletes();
   const { data: templates = [], isLoading: templatesLoading } = useTemplates();
-  
-  console.log(athletes, athletesLoading);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -58,7 +56,7 @@ export default function TriathlonCalculator() {
               <CardContent>
                 <div className="space-y-2">
                   {templates.map((athlete) => (
-                    <TemplateListItem key={athlete.id} athlete={athlete} />
+                    <TemplateListItem key={athlete.id} template={athlete} />
                   ))}
                 </div>
               </CardContent>

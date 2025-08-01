@@ -35,7 +35,6 @@ export default function CheckpointItem({
   onRecordTime,
   isRecording,
 }: CheckpointItemProps) {
-  console.log(athlete);
   const { user } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -331,7 +330,6 @@ export default function CheckpointItem({
 
   const handleDeleteTime = async () => {
     if (!time) return;
-    // console.log(time, time.id);
 
     // Show confirmation dialog
     const confirmed = window.confirm(
@@ -356,7 +354,6 @@ export default function CheckpointItem({
       setIsDeleting(false);
     }
   };
-  console.log(user)
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg">
       <div className="flex items-center gap-4">

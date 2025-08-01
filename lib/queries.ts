@@ -147,7 +147,6 @@ export function useAthleteTimeOnGivenCheckpoint(checkpointId:number) {
         .eq("checkpoint_id",checkpointId);
 
       if (error) throw error;
-      console.log('podczas fetchowania',data)
       return data as AthleteTime[];
     },
     enabled: !!checkpointId,

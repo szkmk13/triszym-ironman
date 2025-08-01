@@ -56,7 +56,6 @@ export default function PerformanceAnalysis({
     if (finishTime) return null
     const predictedTotalSeconds = parseTimeToSeconds(calculatePredictedTotalTime(athlete))
     if (predictedTotalSeconds === 0) return null
-    console.log(predictedTotalSeconds)
 
     const startTime = new Date(swimStartTimeString)
     const estimatedFinishTime = new Date(startTime.getTime() + predictedTotalSeconds * 1000)

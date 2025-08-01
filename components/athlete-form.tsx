@@ -46,9 +46,7 @@ export function AthleteForm() {
   } as Athlete)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log('lecimy')
     e.preventDefault()
-    console.log(formData)
     // Check for validation errors
     const hasErrors = Object.values(validationErrors).some((error) => error !== "")
     if (hasErrors) {

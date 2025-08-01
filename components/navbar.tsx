@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 
 export default function Navbar() {
   const { user } = useAuth();
-  console.log(user, user?.role);
+
   return (
     <div className="flex items-center justify-between container mx-auto p-6 space-y-6">
       <div className="text-center space-y-2">

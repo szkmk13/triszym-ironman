@@ -15,9 +15,13 @@ import { CheckpointsTab } from "@/components/admin/tabs/checkpoints-tab";
 import Link from "next/link";
 import { useCheckpoints, useTemplate, useUpdateTemplate } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Template, RouteData, TemplateCheckpoint, RoutePoint } from "@/lib/supabase-types";
+import {
+  Template,
+  RouteData,
+  TemplateCheckpoint,
+  RoutePoint,
+} from "@/lib/supabase-types";
 import { supabase } from "@/lib/supabase-utils";
-
 
 const SEGMENT_COLORS = {
   swim: "#3b82f6", // niebieski
@@ -49,7 +53,9 @@ export default function TemplateEditPage() {
 
   // Map and route state for current segment
   const [currentSegment, setCurrentSegment] = useState<SegmentType>("swim");
-  const [mapImages, setMapImages] = useState<{[key in SegmentType]?: HTMLImageElement }>({})
+  const [mapImages, setMapImages] = useState<{
+    [key in SegmentType]?: HTMLImageElement;
+  }>({});
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentRoute, setCurrentRoute] = useState<RoutePoint[]>([]);
   const [imageFiles, setImageFiles] = useState<{ [key in SegmentType]?: File }>(
@@ -84,7 +90,6 @@ export default function TemplateEditPage() {
       });
     }
   }, [localTemplate]);
-
 
   // Calculate checkpoint position on route based on distance and laps
   const calculateCheckpointPosition = (
@@ -181,7 +186,9 @@ export default function TemplateEditPage() {
   // Canvas drawing effect
   useEffect(() => {
     if (canvasRef.current && mapImages[currentSegment]) {
-      if (!localTemplate){return}
+      if (!localTemplate) {
+        return;
+      }
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
       const mapImage = mapImages[currentSegment];
@@ -358,15 +365,8 @@ export default function TemplateEditPage() {
         ctx.stroke();
         ctx.setLineDash([]);
       }
-
     }
-  }, [
-    mapImages,
-    currentSegment,
-    currentRoute,
-    localTemplate,
-    checkpoints,
-  ]);
+  }, [mapImages, currentSegment, currentRoute, localTemplate, checkpoints]);
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -469,8 +469,6 @@ export default function TemplateEditPage() {
     toast.success(`Route cleared for ${currentSegment}`);
   };
 
-
-
   const uploadMapImage = async (
     file: File,
     segment: SegmentType
@@ -522,7 +520,7 @@ export default function TemplateEditPage() {
       toast.error("Failed to save template");
     }
   };
-  console.log(currentRoute)
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -556,9 +554,7 @@ export default function TemplateEditPage() {
         {localTemplate ? (
           <>
             <TabsContent value="basic">
-              <BasicInfoTab
-                template={localTemplate}
-              />
+              <BasicInfoTab template={localTemplate} />
             </TabsContent>
 
             <TabsContent value="route">
@@ -586,8 +582,6 @@ export default function TemplateEditPage() {
                 checkpoints={checkpoints}
               />
             </TabsContent>
-
-           
           </>
         ) : (
           <TabsContent value="basic">

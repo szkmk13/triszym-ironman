@@ -14,7 +14,8 @@ export default function RaceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const templateId = Number.parseInt(params.id as string);
-  const { data: athletes = [], isLoading: athletesLoading } = useAthletes(templateId);
+  const { data: athletes = [], isLoading: athletesLoading } =
+    useAthletes(templateId);
   const { data: template, isLoading: templateLoading } =
     useTemplate(templateId);
   if (templateLoading || athletesLoading) {
@@ -60,7 +61,7 @@ export default function RaceDetailPage() {
     athletes,
     runStartCheckpointId
   );
-console.log(swimPartIsFinished,bikePartIsFinished)
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <RaceHeader template={template} onBack={() => router.back()} />
@@ -97,12 +98,10 @@ console.log(swimPartIsFinished,bikePartIsFinished)
         </>
       )}
       <RunSimulation
-                  template={template}
-            athletes={athletes}
-            runStartCheckpointId={runStartCheckpointId}
-      
+        template={template}
+        athletes={athletes}
+        runStartCheckpointId={runStartCheckpointId}
       />
-
     </div>
   );
 }
