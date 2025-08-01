@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useUpdateTemplate } from "@/lib/queries"
-import type { Template } from "@/lib/supabase-utils"
+import { Template } from "@/lib/supabase-types"
 
 interface BasicInfoTabProps {
   template: Template
@@ -18,7 +19,7 @@ export function BasicInfoTab({ template }: BasicInfoTabProps) {
     const currentRouteData = template[routeDataKey] as any
 
     if (currentRouteData) {
-      updateTemplate({
+      updateTemplate.muta({
         ...template,
         [routeDataKey]: {
           ...currentRouteData,

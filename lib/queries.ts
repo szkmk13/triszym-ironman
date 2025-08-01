@@ -7,40 +7,36 @@ import { toast } from "sonner";
 
 // Query Keys
 export const queryKeys = {
-  athletes: ["athletes"] as const,
+  athletes: (templateId?: number) =>
+    templateId !== undefined ? ["athletes", templateId] as const : ["athletes"] as const,
   athlete: (id: number) => ["athlete", id] as const,
   templates: ["templates"] as const,
   template: (templateId: number) => ["template", templateId] as const,
   checkpoints: (templateId: number) => ["checkpoints", templateId] as const,
   athleteTimes: (athleteId: number) => ["athleteTimes", athleteId] as const,
-  athleteTime: (checkpointId: number) => ["athleteTime",checkpointId] as const,
+  athleteTime: (checkpointId: number) => ["athleteTime", checkpointId] as const,
 };
+
 
 // Athletes Queries
 export function useAthletes(templateId?: number) {
   return useQuery({
-    queryKey: [queryKeys.athletes, templateId], // include templateId in the cache key
+    queryKey: queryKeys.athletes(templateId),
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("athletes")
         .select(`
           *,
-          template:templates(*)
+          times:athlete_times(*)
         `)
         .order("created_at", { ascending: false });
 
-      // Apply filter if templateId is provided
-      if (templateId) {
-        query = query.eq("template_id", templateId); // assuming FK column is `template_id`
-      }
-
-      const { data, error } = await query;
-
       if (error) throw error;
-      return data as Athlete[];
+      return data;
     },
   });
 }
+
 
 export function useAthlete(id: number) {
   return useQuery({
@@ -87,10 +83,9 @@ export function useTemplate(templateId: number) {
         .from("templates")
         .select(`
           *,
-          swim_checkpoint:template_checkpoints(id)
+          checkpoints:template_checkpoints(*)
         `)
         .eq("id", templateId)
-        .eq("template_checkpoints.checkpoint_type", "swim_start")
         .single();
 
       if (error) throw error;
@@ -99,6 +94,7 @@ export function useTemplate(templateId: number) {
     enabled: !!templateId,
   });
 }
+
 // Checkpoints Queries
 export function useCheckpoints(templateId: number) {
   return useQuery({

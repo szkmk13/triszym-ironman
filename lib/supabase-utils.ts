@@ -10,6 +10,11 @@ export const timeValidation = {
   run: { min: 0, max: 300 }, // 0 to 5h in minutes
   transition: { min: 0, max: 30 }, // 0 to 30min for transitions
 }
+export  function durationToSeconds(duration: string|null): number {
+    if (!duration){return 0}
+    const [h, m, s] = duration.split(":").map(Number);
+    return h * 3600 + m * 60 + s;
+  }
 
 export function validateTimeInput(
   timeString: string,
@@ -140,7 +145,7 @@ export function calculatePredictedTotalTime(athlete: Athlete): string {
 }
 
 // Pace and speed calculation utilities
-export function calculateSwimPace(timeStr: string, distanceKm: number): string {
+export function calculateSwimPace(timeStr: string|null, distanceKm: number): string {
   if (!timeStr || timeStr === "--:--:--" || !distanceKm) return "--:--"
 
   const totalSeconds = parseTimeToSeconds(timeStr)
@@ -154,7 +159,7 @@ export function calculateSwimPace(timeStr: string, distanceKm: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`
 }
 
-export function calculateBikeSpeed(timeStr: string, distanceKm: number): string {
+export function calculateBikeSpeed(timeStr: string|null, distanceKm: number): string {
   if (!timeStr || timeStr === "--:--:--" || !distanceKm) return "--"
 
   const totalSeconds = parseTimeToSeconds(timeStr)
@@ -164,7 +169,7 @@ export function calculateBikeSpeed(timeStr: string, distanceKm: number): string 
   return speed.toFixed(1)
 }
 
-export function calculateRunPace(timeStr: string, distanceKm: number): string {
+export function calculateRunPace(timeStr: string|null, distanceKm: number): string {
   if (!timeStr || timeStr === "--:--:--" || !distanceKm) return "--:--"
 
   const totalSeconds = parseTimeToSeconds(timeStr)

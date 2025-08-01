@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Athlete } from "@/lib/supabase-utils";
+import { Athlete } from "@/lib/supabase-types";
 import { ArrowLeft, Trophy, MapPin } from "lucide-react";
 
 interface AthleteHeaderProps {

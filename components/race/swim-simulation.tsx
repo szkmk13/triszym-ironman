@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useEffect, useRef, useState } from "react";
-import { calculateSwimPace } from "@/lib/supabase-utils";
+import { calculateSwimPace, durationToSeconds } from "@/lib/supabase-utils";
 import { useAthleteTimeOnGivenCheckpoint } from "@/lib/queries";
 import {
   Athlete,
@@ -30,7 +30,7 @@ interface SimulationTabProps {
   swimStartCheckpointId: number;
 }
 
-export default function RaceSimulation({
+export default function SwimSimulation({
   template,
   athletes,
   swimStartCheckpointId,
@@ -62,11 +62,7 @@ export default function RaceSimulation({
     img.src = mapImageUrl;
   }, [mapImageUrl]);
 
-  const durationToSeconds = (duration: string) =>
-    duration
-      .split(":")
-      .map(Number)
-      .reduce((acc, t, i) => acc + t * [3600, 60, 1][i], 0);
+
 
   const getSwimmerData = (athlete: Athlete, checkpoint: AthleteTime | undefined, color: string): Swimmer => {
     const totalDistance = template.swim_distance * 1000;
