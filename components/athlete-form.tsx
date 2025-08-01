@@ -11,6 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { validateTimeInput, calculatePredictedTotalTime } from "@/lib/supabase-utils"
 import { toast } from "sonner"
 import { useTemplates, useCreateAthlete } from "@/lib/queries"
+import { Athlete } from "@/lib/supabase-types"
+
 
 export function AthleteForm() {
   const { data: templates = [] } = useTemplates()
@@ -41,7 +43,7 @@ export function AthleteForm() {
     predicted_run_time: formData.predictedRunTime,
     predicted_t1_time: formData.predictedT1Time,
     predicted_t2_time: formData.predictedT2Time,
-  } as any)
+  } as Athlete)
 
   const handleSubmit = async (e: React.FormEvent) => {
     console.log('lecimy')

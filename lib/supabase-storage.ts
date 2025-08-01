@@ -10,7 +10,7 @@ export async function uploadMapImage(file: File, templateId: number): Promise<st
     const filePath = `maps/${fileName}`
 
     // Upload do Supabase Storage
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from("triathlon-maps") // nazwa bucket'a
       .upload(filePath, file, {
         cacheControl: "3600",

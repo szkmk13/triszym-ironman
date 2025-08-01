@@ -1,68 +1,56 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { ChevronRight, Clock, Trophy, MapPin } from "lucide-react"
-import Link from "next/link"
-import { Athlete, TemplateCheckpoint, AthleteTime } from "@/lib/supabase-types"
-import { createClient } from "@/lib/supabase/client"
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ChevronRight, Clock, Trophy, MapPin } from "lucide-react";
+import Link from "next/link";
+import { Athlete } from "@/lib/supabase-types";
+import { useAthleteTimes, useCheckpoints } from "@/lib/queries";
 
 interface AthleteListItemProps {
-  athlete: Athlete
+  athlete: Athlete;
 }
 
 export function AthleteListItem({ athlete }: AthleteListItemProps) {
-  const [checkpoints, setCheckpoints] = useState<TemplateCheckpoint[]>([])
-  const [athleteTimes, setAthleteTimes] = useState<AthleteTime[]>([])
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-
-  useEffect(() => {
-    fetchData()
-  }, [athlete.id])
-
-  const fetchData = async () => {
-    const [checkpointsResult, timesResult] = await Promise.all([
-      supabase.from("template_checkpoints").select("*").eq("template_id", athlete.template_id).order("order_index"),
-      supabase.from("athlete_times").select("*").eq("athlete_id", athlete.id),
-    ])
-
-    if (checkpointsResult.data) setCheckpoints(checkpointsResult.data)
-    if (timesResult.data) setAthleteTimes(timesResult.data)
-    setLoading(false)
-  }
+  const { data: checkpoints = [] } = useCheckpoints(athlete.template_id);
+  const { data: athleteTimes = [] } = useAthleteTimes(athlete.id);
 
   const getCompletionStats = () => {
-    const totalCheckpoints = checkpoints.length
-    const completedCheckpoints = athleteTimes.length
-    return { total: totalCheckpoints, completed: completedCheckpoints }
-  }
+    const totalCheckpoints = checkpoints.length;
+    const completedCheckpoints = athleteTimes.length;
+    return { total: totalCheckpoints, completed: completedCheckpoints };
+  };
 
   const getCurrentStatus = () => {
-    if (athleteTimes.length === 0) return "Not Started"
-    if (athleteTimes.length === checkpoints.length) return "Finished"
+    if (athleteTimes.length === 0) return "Not Started";
+    if (athleteTimes.length === checkpoints.length) return "Finished";
 
-    const lastCompletedCheckpoint = checkpoints.find((cp) => athleteTimes.some((at) => at.checkpoint_id === cp.id))
+    const lastCompletedCheckpoint = checkpoints.find((cp) =>
+      athleteTimes.some((at) => at.checkpoint_id === cp.id)
+    );
 
-    return lastCompletedCheckpoint?.name || "In Progress"
-  }
+    return lastCompletedCheckpoint?.name || "In Progress";
+  };
 
   const getStatusColor = () => {
-    const status = getCurrentStatus()
-    if (status === "Finished") return "bg-green-100 text-green-800"
-    if (status === "Not Started") return "bg-gray-100 text-gray-800"
-    return "bg-blue-100 text-blue-800"
-  }
+    const status = getCurrentStatus();
+    if (status === "Finished") return "bg-green-100 text-green-800";
+    if (status === "Not Started") return "bg-gray-100 text-gray-800";
+    return "bg-blue-100 text-blue-800";
+  };
 
   const getSwimStartTime = () => {
-    const swimStartCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "swim_start")
-    return swimStartCheckpoint ? athleteTimes.find((at) => at.checkpoint_id === swimStartCheckpoint.id) : null
-  }
+    const swimStartCheckpoint = checkpoints.find(
+      (cp) => cp.checkpoint_type === "swim_start"
+    );
+    return swimStartCheckpoint
+      ? athleteTimes.find((at) => at.checkpoint_id === swimStartCheckpoint.id)
+      : null;
+  };
 
-  const stats = getCompletionStats()
-  const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0
-  const swimStartTime = getSwimStartTime()
+  const stats = getCompletionStats();
+  const progress = stats.total > 0 ? (stats.completed / stats.total) * 100 : 0;
+  const swimStartTime = getSwimStartTime();
 
   return (
     <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
@@ -83,7 +71,12 @@ export function AthleteListItem({ athlete }: AthleteListItemProps) {
           {swimStartTime && (
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              <span>{new Date(swimStartTime.actual_time).toLocaleTimeString("en-GB", { hour12: false })}</span>
+              <span>
+                {new Date(swimStartTime.actual_time).toLocaleTimeString(
+                  "en-GB",
+                  { hour12: false }
+                )}
+              </span>
             </div>
           )}
         </div>
@@ -107,5 +100,5 @@ export function AthleteListItem({ athlete }: AthleteListItemProps) {
         </Button>
       </Link>
     </div>
-  )
+  );
 }

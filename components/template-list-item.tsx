@@ -1,37 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { supabase } from "@/lib/supabase-utils"
 import { ChevronRight, Clock, Trophy, MapPin } from "lucide-react"
 import Link from "next/link"
-import { Athlete, TemplateCheckpoint, AthleteTime } from "@/lib/supabase-types"
+import { Athlete } from "@/lib/supabase-types"
+import { useCheckpoints, useAthleteTimes } from "@/lib/queries"
 
 interface AthleteListItemProps {
   athlete: Athlete
 }
 
 export function TemplateListItem({ athlete }: AthleteListItemProps) {
-  const [checkpoints, setCheckpoints] = useState<TemplateCheckpoint[]>([])
-  const [athleteTimes, setAthleteTimes] = useState<AthleteTime[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchData()
-  }, [athlete.id])
-
-  const fetchData = async () => {
-    const [checkpointsResult, timesResult] = await Promise.all([
-      supabase.from("template_checkpoints").select("*").eq("template_id", athlete.template_id).order("order_index"),
-      supabase.from("athlete_times").select("*").eq("athlete_id", athlete.id),
-    ])
-
-    if (checkpointsResult.data) setCheckpoints(checkpointsResult.data)
-    if (timesResult.data) setAthleteTimes(timesResult.data)
-    setLoading(false)
-  }
-
+  // const [checkpoints, setCheckpoints] = useState<TemplateCheckpoint[]>([])
+  // const [athleteTimes, setAthleteTimes] = useState<AthleteTime[]>([])
+  const { data: checkpoints = [] } = useCheckpoints(athlete.template_id);
+  const { data: athleteTimes = [] } = useAthleteTimes(athlete.id);
   const getCompletionStats = () => {
     const totalCheckpoints = checkpoints.length
     const completedCheckpoints = athleteTimes.length
