@@ -12,6 +12,8 @@ interface Cyclist extends Athlete {
   distanceCovered: number
   isActive: boolean
   hasStarted: boolean
+  currentLap: number
+  totalLaps: number
 }
 
 interface SimulationTabProps {
@@ -28,8 +30,11 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
   const [cyclists, setCyclists] = useState<Cyclist[]>([])
   const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null)
 
+  const totalLaps = template?.bike_route_data?.laps || 1
   const routePoints = template?.bike_route_data?.points || []
   const mapImageUrl = template?.bike_map_url || "/placeholder.svg?height=600&width=800&text=Bicycle+Route+Map"
+
+  const lapDistance = template.bike_distance * 1000/totalLaps // Distance per lap in meters
 
   const { data: checkpointData, isLoading, error } = useAthleteTimeOnGivenCheckpoint(bikeStartCheckpointId)
 
@@ -54,14 +59,19 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
 
     const timeElapsed = (currentTime.getTime() - startTime.getTime()) / 1000
     const totalDuration = durationToSeconds(athlete.predicted_bike_time)
-    const totalDistance = template.bike_distance * 1000
+    const totalDistance = template.bike_distance * 1000 // Total distance across all laps
     const distance = Math.min((timeElapsed / totalDuration) * totalDistance, totalDistance)
+
+    const currentLap = Math.floor(distance / lapDistance) + 1
+    const clampedLap = Math.min(currentLap, totalLaps)
 
     return {
       currentPosition: 0,
       distanceCovered: distance,
       isActive: distance < totalDistance,
       hasStarted: true,
+      currentLap: clampedLap,
+      totalLaps: totalLaps,
     }
   }
 
@@ -73,15 +83,18 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
     if (!hasStarted) return null
 
     const timeElapsed = (currentTime.getTime() - startTime.getTime()) / 1000
-    const totalDistance = template.bike_distance * 1000
+    const totalDistance = template.bike_distance * 1000 // Total distance across all laps
 
-    // Calculate distance at target speed (convert km/h to m/s)
     const speedMs = (targetSpeed * 1000) / 3600
     const distanceAtSpeed = Math.min(speedMs * timeElapsed, totalDistance)
 
     if (distanceAtSpeed <= 0) return null
 
-    const progress = distanceAtSpeed / totalDistance
+
+    const distanceInCurrentLap = Math.floor(distanceAtSpeed% lapDistance) 
+    const progress = Math.min(distanceInCurrentLap / lapDistance, 1)
+
+    // const progress = distanceAtSpeed / totalDistance
     const segIndex = Math.floor(progress * (routePoints.length - 1))
     const segProg = progress * (routePoints.length - 1) - segIndex
     const current = routePoints[segIndex] || routePoints[0]
@@ -99,14 +112,17 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
       distanceCovered: 0,
       isActive: false,
       hasStarted: started,
+      currentLap: started ? 1 : 0,
+      totalLaps: totalLaps,
     }
   }
 
   const calculateCanvasPosition = (cyclist: Cyclist) => {
     if (!cyclist.hasStarted || !routePoints.length) return { x: 0, y: 0 }
 
-    const total = template.bike_distance * 1000
-    const progress = Math.min(cyclist.distanceCovered / total, 1)
+    const distanceInCurrentLap = cyclist.distanceCovered % lapDistance
+    const progress = Math.min(distanceInCurrentLap / lapDistance, 1)
+
     const segIndex = Math.floor(progress * (routePoints.length - 1))
     const segProg = progress * (routePoints.length - 1) - segIndex
     const current = routePoints[segIndex] || routePoints[0]
@@ -137,7 +153,7 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
 
     if (routePoints.length > 1) {
       ctx.strokeStyle = "#10B981"
-      ctx.lineWidth = 0.5
+      ctx.lineWidth = 0.8
       ctx.beginPath()
       ctx.moveTo(routePoints[0].x * scale, routePoints[0].y * scale)
       for (let i = 1; i < routePoints.length; i++) {
@@ -150,31 +166,34 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
       if (!cyclist.hasStarted) return
 
       const checkpoint = checkpointData?.find((c) => c.athlete_id === Number(cyclist.id))
-      const pos30 = calculateSpeedPosition(cyclist, 30, checkpoint)
-      const pos25 = calculateSpeedPosition(cyclist, 25, checkpoint)
+      const pos30 = calculateSpeedPosition(cyclist, 100, checkpoint)
+      const pos25 = calculateSpeedPosition(cyclist, 80, checkpoint)
 
       if (pos30 && pos25) {
-        // Create filled area between 30km/h and 25km/h positions
         ctx.globalAlpha = 1
         ctx.beginPath()
 
-        // Calculate the route segment between these two positions
         const total = template.bike_distance * 1000
         const timeElapsed = (currentTime.getTime() - new Date(checkpoint?.actual_time || 0).getTime()) / 1000
 
-        const speed30Ms = (30 * 1000) / 3600
-        const speed25Ms = (25 * 1000) / 3600
+        const speed30Ms = (100 * 1000) / 3600
+        const speed25Ms = (80 * 1000) / 3600
 
         const distance30 = Math.min(speed30Ms * timeElapsed, total)
         const distance25 = Math.min(speed25Ms * timeElapsed, total)
+        console.log(distance25,distance30)
 
-        const progress30 = distance30 / total
-        const progress25 = distance25 / total
+        const distanceInCurrentLap25 = Math.floor(distance25% lapDistance) 
+        const distanceInCurrentLap30 = Math.floor(distance30% lapDistance) 
 
+        const progress30 = Math.min(distanceInCurrentLap30 / lapDistance, 1)
+        const progress25 = Math.min(distanceInCurrentLap25 / lapDistance, 1)
+        console.log(progress25,progress30)
         const startIndex = Math.floor(progress25 * (routePoints.length))
         const endIndex = Math.floor(progress30 * (routePoints.length - 1))
 
-        // Draw filled path segment
+        console.log(distanceInCurrentLap25,distanceInCurrentLap30)
+
         if (startIndex < endIndex) {
           ctx.moveTo(pos25.x * scale, pos25.y * scale)
           for (let i = startIndex; i <= endIndex; i++) {
@@ -182,41 +201,27 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
             ctx.lineTo(point.x * scale, point.y * scale)
           }
           ctx.lineTo(pos30.x * scale, pos30.y * scale)
-          ctx.lineWidth = 6
-          ctx.strokeStyle = "#EC4899"
-          ctx.stroke()
+          ctx.lineWidth = 4
+
+          
+
+  const gradient = ctx.createLinearGradient(
+    pos25.x * scale,
+    pos25.y * scale,
+    pos30.x * scale,
+    pos30.y * scale
+  );
+  gradient.addColorStop(0, "#3B82F6");   // kolor na początku
+  gradient.addColorStop(1, "#EC4899");   // kolor na końcu
+
+  ctx.strokeStyle = gradient; // ustawiamy gradient jako kolor linii
+  ctx.stroke();
+
+
+
         }
         ctx.globalAlpha = 1
       }
-
-      // Draw speed markers
-      // if (pos30) {
-      //   ctx.fillStyle = cyclist.color
-      //   // ctx.globalAlpha = 0.6
-      //   // ctx.beginPath()
-      //   // ctx.arc(pos30.x * scale, pos30.y * scale, 6, 0, Math.PI * 2)
-      //   // ctx.fill()
-
-      //   ctx.fillStyle = "#000"
-      //   ctx.font = "10px Arial"
-      //   ctx.textAlign = "center"
-      //   ctx.fillText("30km/h", pos30.x * scale, pos30.y * scale - 10)
-      //   ctx.globalAlpha = 1
-      // }
-
-      // if (pos25) {
-      //   ctx.fillStyle = cyclist.color
-      //   // ctx.globalAlpha = 0.4
-      //   // ctx.beginPath()
-      //   // ctx.arc(pos25.x * scale, pos25.y * scale, 6, 0, Math.PI * 2)
-      //   // ctx.fill()
-
-      //   ctx.fillStyle = "#000"
-      //   ctx.font = "10px Arial"
-      //   ctx.textAlign = "center"
-      //   ctx.fillText("25km/h", pos25.x * scale, pos25.y * scale - 10)
-      //   ctx.globalAlpha = 1
-      // }
     })
 
     cyclists.forEach((cyclist) => {
@@ -224,11 +229,11 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
 
       const position = calculateCanvasPosition(cyclist)
 
-      ctx.fillStyle = "#EF4444"
+      ctx.fillStyle = cyclist.color
       ctx.strokeStyle = "#fff"
-      ctx.lineWidth = 2
+      ctx.lineWidth = 1
       ctx.beginPath()
-      ctx.arc(position.x * scale, position.y * scale, 10, 0, Math.PI * 2)
+      ctx.arc(position.x * scale, position.y * scale, 8, 0, Math.PI * 2)
       ctx.fill()
       ctx.stroke()
 
@@ -237,7 +242,7 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
       ctx.textAlign = "center"
       ctx.fillText(cyclist.currentPosition.toString(), position.x * scale, position.y * scale + 4)
     })
-  }, [cyclists, routePoints, currentTime, checkpointData, mapImage])
+  }, [cyclists, routePoints, totalLaps, currentTime, checkpointData, mapImage])
 
   useEffect(() => {
     if (!checkpointData || athletes.length === 0) return
@@ -283,6 +288,11 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
         <CardHeader>
           <CardTitle className="flex justify-between">
             Live Preview - Biking Checkpoint {bikeStartCheckpointId}
+            {totalLaps > 1 && (
+              <span className="text-sm font-normal text-muted-foreground">
+                {totalLaps} Laps • {(lapDistance / 1000).toFixed(1)}km per lap
+              </span>
+            )}
             <span className="text-sm font-normal text-muted-foreground">
               Updated: {currentTime.toLocaleTimeString()}
             </span>
@@ -295,15 +305,14 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
               {cyclists
                 .sort((a, b) => a.currentPosition - b.currentPosition)
                 .map((cyclist) => {
-                  const total = template.bike_distance * 1000
+                  const total = template.bike_distance * 1000  // Total distance across all laps
                   const progress = (cyclist.distanceCovered / total) * 100
                   const finished = progress >= 100
                   return (
                     <Card
                       key={cyclist.id}
-                      className={`$ {
-                        finished ? "ring-2 ring-green-500" :
-                        cyclist.isActive ? "ring-1 ring-blue-300" : ""
+                      className={`${
+                        finished ? "ring-2 ring-green-500" : cyclist.isActive ? "ring-1 ring-blue-300" : ""
                       }`}
                     >
                       <CardContent className="p-4">
@@ -326,10 +335,23 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
                               {!cyclist.hasStarted && (
                                 <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">WAITING</span>
                               )}
+                              {cyclist.hasStarted && (
+                                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                                  LAP {cyclist.currentLap}/{cyclist.totalLaps}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
                         <div className="text-sm space-y-1">
+                          {cyclist.hasStarted && (
+                            <div className="flex justify-between">
+                              <span>Current Lap:</span>
+                              <span className="font-mono">
+                                {cyclist.currentLap} of {cyclist.totalLaps}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex justify-between">
                             <span>Distance:</span>
                             <span className="font-mono">{Math.round(cyclist.distanceCovered)}m</span>

@@ -28,12 +28,15 @@ export function useAthletes(templateId?: number) {
   return useQuery({
     queryKey: queryKeys.athletes(templateId),
     queryFn: async () => {
-      const { data, error } = await supabase
+ const { data, error } = await supabase
         .from("athletes")
         .select(
           `
           *,
-          times:athlete_times(*)
+          times:athlete_times(
+            *,
+            checkpoint:template_checkpoints(*)
+          )
         `
         )
         .order("created_at", { ascending: false });

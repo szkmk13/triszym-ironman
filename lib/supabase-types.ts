@@ -60,4 +60,5 @@ export type AthleteTime = {
   athlete_id: number;
   checkpoint_id: number;
   actual_time: string;
+  checkpoint: TemplateCheckpoint
 };

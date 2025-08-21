@@ -62,6 +62,7 @@ export default function RaceDetailPage() {
     runStartCheckpointId
   );
 
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <RaceHeader template={template} onBack={() => router.back()} />
@@ -94,6 +95,7 @@ export default function RaceDetailPage() {
             template={template}
             athletes={athletes}
             bikeStartCheckpointId={bikeStartCheckpointId}
+            // currentBikeCheckpoint={currentBikeCheckpoint}
           />
         </>
       )}
