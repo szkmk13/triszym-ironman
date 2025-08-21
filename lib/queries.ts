@@ -5,7 +5,6 @@ import {
   Template,
   TemplateCheckpoint,
   AthleteTime,
-  RouteData,
   SegmentRoutData,
 } from "./supabase-types";
 import { toast } from "sonner";

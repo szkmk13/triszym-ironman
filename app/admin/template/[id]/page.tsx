@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { BasicInfoTab } from "@/components/admin/tabs/basic-info-tab";
 import { RouteMapsTab } from "@/components/admin/tabs/route-maps-tab";
 import { CheckpointsTab } from "@/components/admin/tabs/checkpoints-tab";
@@ -16,7 +16,6 @@ import Link from "next/link";
 import {
   useCheckpoints,
   useTemplate,
-  useUpdateTemplate,
   useUpdateTemplateRoute,
 } from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,8 +51,6 @@ export default function TemplateEditPage() {
 
   const { data: checkpoints = [] } = useCheckpoints(templateId || 0);
   const { data: template } = useTemplate(templateId || 0);
-  const updateTemplateMutation = useUpdateTemplate();
-
   // Local state for tracking changes
   const [localTemplate, setLocalTemplate] = useState<Template | null>(null);
 
@@ -67,6 +64,7 @@ export default function TemplateEditPage() {
   const [imageFiles, setImageFiles] = useState<{ [key in SegmentType]?: File }>(
     {}
   );
+  const costam = useUpdateTemplateRoute();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -192,9 +190,9 @@ export default function TemplateEditPage() {
   // Canvas drawing effect
   useEffect(() => {
     if (canvasRef.current && mapImages[currentSegment]) {
-      if (!localTemplate) {
-        return;
-      }
+      // if (!localTemplate) {
+      //   return;
+      // }
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
       const mapImage = mapImages[currentSegment];
@@ -215,12 +213,12 @@ export default function TemplateEditPage() {
       ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
 
       // Draw saved route for current segment
-      const routeData = localTemplate?.[
+      const routeData = template?.[
         `${currentSegment}_route_data` as keyof Template
       ] as RouteData;
       if (routeData && routeData.points.length > 1) {
         ctx.strokeStyle = routeData.color;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 2;
         ctx.lineCap = "round";
         ctx.beginPath();
         ctx.moveTo(
@@ -236,7 +234,7 @@ export default function TemplateEditPage() {
         const laps = routeData.laps || 1;
         if (laps > 1) {
           ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-          ctx.fillRect(10, 10, 120, 30);
+          ctx.fillRect(10, 10, 130, 30);
           ctx.fillStyle = "#ffffff";
           ctx.font = "14px Arial";
           ctx.fillText(`${laps} laps on this route`, 15, 30);
@@ -307,7 +305,7 @@ export default function TemplateEditPage() {
 
           // Calculate lap number for display
           const laps = routeData.laps || 1;
-          const totalDistance = localTemplate[
+          const totalDistance = template[
             `${currentSegment}_distance` as keyof Template
           ] as number;
           const distancePerLap = totalDistance / laps;
@@ -437,15 +435,11 @@ export default function TemplateEditPage() {
   const handleCanvasMouseUp = () => {
     setIsDrawing(false);
   };
-  const costam = useUpdateTemplateRoute();
 
   const saveCurrentRoute = async () => {
     if (currentRoute.length < 2) return;
     const file = imageFiles[currentSegment];
-    console.log(file)
-
     const imageUrl = await uploadMapImage(file, currentSegment);
-
     const routeData: SegmentRoutData = {
       segmentType: currentSegment,
       points: [...currentRoute],
@@ -454,28 +448,20 @@ export default function TemplateEditPage() {
       segmentMapUrl: imageUrl,
     };
     costam.mutate(routeData);
-
     setCurrentRoute([]);
     toast.success(`Route saved for ${currentSegment}`);
   };
 
   const clearCurrentRoute = () => {
-    setLocalTemplate((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [`${currentSegment}_route_data`]: null,
-      };
-    });
     setCurrentRoute([]);
     toast.success(`Route cleared for ${currentSegment}`);
   };
 
   const uploadMapImage = async (
-    file: File|undefined,
+    file: File | undefined,
     segment: SegmentType
-  ): Promise<string> =>  {
-    if (!file) {return ""}
+  ): Promise<string> => {
+    if (!file) return "";
 
     const fileExt = file.name.split(".").pop();
     const fileName = `template-${templateId}-${segment}-${Date.now()}.${fileExt}`;
@@ -497,58 +483,6 @@ export default function TemplateEditPage() {
     return publicUrl;
   };
 
-  const saveTemplate = async () => {
-    if (!localTemplate) return;
-
-    try {
-      // const updateData: Template = {
-      //   ...localTemplate,
-      //   id: templateId,
-      // };
-      const updateData = {
-        ...template,
-        name: localTemplate.name,
-        swim_distance: localTemplate.swim_distance,
-        bike_distance: localTemplate.bike_distance,
-        run_distance: localTemplate.run_distance,
-        swim_route_data: {
-          ...((template.swim_route_data as any) || {}),
-          laps: (template.swim_route_data as any)?.laps || 0,
-          points: (template.swim_route_data as any)?.points || [],
-          color: (template.swim_route_data as any)?.color || "#3b82f6",
-        },
-        bike_route_data: {
-          ...((template.bike_route_data as any) || {}),
-          laps: (template.bike_route_data as any)?.laps || 0,
-          points: (template.bike_route_data as any)?.points || [],
-          color: (template.bike_route_data as any)?.color || "#10b981",
-        },
-        run_route_data: {
-          ...((template.run_route_data as any) || {}),
-          laps: (template.run_route_data as any)?.laps || 0,
-          points: (template.run_route_data as any)?.points || [],
-          color: (template.run_route_data as any)?.color || "#ef4444",
-        },
-      };
-      // Upload new images and update URLs
-      const segments: SegmentType[] = ["swim", "bike", "run"];
-      for (const segment of segments) {
-        const file = imageFiles[segment];
-        if (file) {
-          const imageUrl = await uploadMapImage(file, segment);
-          updateData[`${segment}_map_url`] = imageUrl;
-        }
-      }
-
-      await updateTemplateMutation.mutateAsync(updateData);
-      toast.success("Template saved successfully");
-      setImageFiles({}); // Clear uploaded files
-    } catch (error) {
-      console.error("Error saving template:", error);
-      toast.error("Failed to save template");
-    }
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -560,15 +494,6 @@ export default function TemplateEditPage() {
             </Button>
           </Link>
           <h1 className="text-2xl font-bold">Edit Template</h1>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={saveTemplate}
-            disabled={updateTemplateMutation.isPending}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
-          </Button>
         </div>
       </div>
 
