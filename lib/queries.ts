@@ -1,14 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "./supabase-utils";
 import {
-  supabase,
-} from "./supabase-utils";
-import { Athlete, Template, TemplateCheckpoint, AthleteTime } from "./supabase-types";
+  Athlete,
+  Template,
+  TemplateCheckpoint,
+  AthleteTime,
+  RouteData,
+  SegmentRoutData,
+} from "./supabase-types";
 import { toast } from "sonner";
 
 // Query Keys
 export const queryKeys = {
   athletes: (templateId?: number) =>
-    templateId !== undefined ? ["athletes", templateId] as const : ["athletes"] as const,
+    templateId !== undefined
+      ? (["athletes", templateId] as const)
+      : (["athletes"] as const),
   athlete: (id: number) => ["athlete", id] as const,
   templates: ["templates"] as const,
   template: (templateId: number) => ["template", templateId] as const,
@@ -17,7 +24,6 @@ export const queryKeys = {
   athleteTime: (checkpointId: number) => ["athleteTime", checkpointId] as const,
 };
 
-
 // Athletes Queries
 export function useAthletes(templateId?: number) {
   return useQuery({
@@ -25,10 +31,12 @@ export function useAthletes(templateId?: number) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("athletes")
-        .select(`
+        .select(
+          `
           *,
           times:athlete_times(*)
-        `)
+        `
+        )
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -42,8 +50,6 @@ export function useAthletes(templateId?: number) {
     },
   });
 }
-
-
 
 export function useAthlete(id: number) {
   return useQuery({
@@ -88,10 +94,12 @@ export function useTemplate(templateId: number) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("templates")
-        .select(`
+        .select(
+          `
           *,
           checkpoints:template_checkpoints(*)
-        `)
+        `
+        )
         .eq("id", templateId)
         .single();
 
@@ -137,14 +145,14 @@ export function useAthleteTimes(athleteId: number) {
   });
 }
 // Athlete Time Query
-export function useAthleteTimeOnGivenCheckpoint(checkpointId:number) {
+export function useAthleteTimeOnGivenCheckpoint(checkpointId: number) {
   return useQuery({
     queryKey: queryKeys.athleteTime(checkpointId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("athlete_times")
         .select("*")
-        .eq("checkpoint_id",checkpointId);
+        .eq("checkpoint_id", checkpointId);
 
       if (error) throw error;
       return data as AthleteTime[];
@@ -308,8 +316,7 @@ export function useCreateTemplate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.templates });
-      toast.success("New template added")
-
+      toast.success("New template added");
     },
   });
 }
@@ -326,6 +333,9 @@ export function useUpdateTemplate() {
           swim_distance: template.swim_distance,
           bike_distance: template.bike_distance,
           run_distance: template.run_distance,
+          swim_route_data: template.swim_route_data,
+          bike_route_data: template.bike_route_data,
+          run_route_data: template.run_route_data,
         })
         .eq("id", template.id)
         .select()
@@ -334,8 +344,60 @@ export function useUpdateTemplate() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.templates });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: [queryKeys.template(data.id)],
+      });
+    },
+  });
+}
+
+export function useUpdateTemplateRoute() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (route: SegmentRoutData) => {
+      // pobierz tylko ten fragment
+
+      const segmentName = `${route.segmentType}_route_data`;
+      const segmentMapName = `${route.segmentType}_map_url`;
+
+      const { data: current, error: fetchError } = await supabase
+        .from("templates")
+        .select()
+        .eq("id", route.templateId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      console.log(current);
+      // weź obiekt spod klucza
+      const segment = current[segmentName];
+
+      // podmień points
+      const updatedSegment = {
+        ...segment,
+        points: route.points,
+      };
+      const updatedMapUrl = route.segmentMapUrl?route.segmentMapUrl: current.segmentMapName
+
+      // zapisz tylko ten klucz z powrotem do template
+      const { data, error } = await supabase
+        .from("templates")
+        .update({
+          [segmentName]: updatedSegment,
+          [segmentMapName]: updatedMapUrl,
+        })
+        .eq("id", route.templateId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: [queryKeys.template(data.id)],
+      });
     },
   });
 }

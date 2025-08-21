@@ -13,13 +13,19 @@ import { BasicInfoTab } from "@/components/admin/tabs/basic-info-tab";
 import { RouteMapsTab } from "@/components/admin/tabs/route-maps-tab";
 import { CheckpointsTab } from "@/components/admin/tabs/checkpoints-tab";
 import Link from "next/link";
-import { useCheckpoints, useTemplate, useUpdateTemplate } from "@/lib/queries";
+import {
+  useCheckpoints,
+  useTemplate,
+  useUpdateTemplate,
+  useUpdateTemplateRoute,
+} from "@/lib/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Template,
   RouteData,
   TemplateCheckpoint,
   RoutePoint,
+  SegmentRoutData,
 } from "@/lib/supabase-types";
 import { supabase } from "@/lib/supabase-utils";
 
@@ -375,8 +381,10 @@ export default function TemplateEditPage() {
     if (file) {
       setImageFiles((prev) => ({ ...prev, [currentSegment]: file }));
       const reader = new FileReader();
+      console.log(reader);
       reader.onload = (e) => {
         const img = new Image();
+        console.log(img);
         img.onload = () => {
           setMapImages((prev) => ({ ...prev, [currentSegment]: img }));
         };
@@ -429,29 +437,23 @@ export default function TemplateEditPage() {
   const handleCanvasMouseUp = () => {
     setIsDrawing(false);
   };
+  const costam = useUpdateTemplateRoute();
 
-  const saveCurrentRoute = () => {
+  const saveCurrentRoute = async () => {
     if (currentRoute.length < 2) return;
+    const file = imageFiles[currentSegment];
+    console.log(file)
 
-    // Get existing route data or create new one
-    const existingRouteData = localTemplate?.[
-      `${currentSegment}_route_data` as keyof Template
-    ] as RouteData;
-    const laps = existingRouteData?.laps || 1;
+    const imageUrl = await uploadMapImage(file, currentSegment);
 
-    const routeData: RouteData = {
+    const routeData: SegmentRoutData = {
+      segmentType: currentSegment,
       points: [...currentRoute],
       color: SEGMENT_COLORS[currentSegment],
-      laps: laps,
+      templateId: templateId,
+      segmentMapUrl: imageUrl,
     };
-
-    setLocalTemplate((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        [`${currentSegment}_route_data`]: routeData,
-      };
-    });
+    costam.mutate(routeData);
 
     setCurrentRoute([]);
     toast.success(`Route saved for ${currentSegment}`);
@@ -470,9 +472,11 @@ export default function TemplateEditPage() {
   };
 
   const uploadMapImage = async (
-    file: File,
+    file: File|undefined,
     segment: SegmentType
-  ): Promise<string> => {
+  ): Promise<string> =>  {
+    if (!file) {return ""}
+
     const fileExt = file.name.split(".").pop();
     const fileName = `template-${templateId}-${segment}-${Date.now()}.${fileExt}`;
     const filePath = `maps/${fileName}`;
@@ -497,11 +501,35 @@ export default function TemplateEditPage() {
     if (!localTemplate) return;
 
     try {
-      const updateData: Template = {
-        ...localTemplate,
-        id: templateId,
+      // const updateData: Template = {
+      //   ...localTemplate,
+      //   id: templateId,
+      // };
+      const updateData = {
+        ...template,
+        name: localTemplate.name,
+        swim_distance: localTemplate.swim_distance,
+        bike_distance: localTemplate.bike_distance,
+        run_distance: localTemplate.run_distance,
+        swim_route_data: {
+          ...((template.swim_route_data as any) || {}),
+          laps: (template.swim_route_data as any)?.laps || 0,
+          points: (template.swim_route_data as any)?.points || [],
+          color: (template.swim_route_data as any)?.color || "#3b82f6",
+        },
+        bike_route_data: {
+          ...((template.bike_route_data as any) || {}),
+          laps: (template.bike_route_data as any)?.laps || 0,
+          points: (template.bike_route_data as any)?.points || [],
+          color: (template.bike_route_data as any)?.color || "#10b981",
+        },
+        run_route_data: {
+          ...((template.run_route_data as any) || {}),
+          laps: (template.run_route_data as any)?.laps || 0,
+          points: (template.run_route_data as any)?.points || [],
+          color: (template.run_route_data as any)?.color || "#ef4444",
+        },
       };
-
       // Upload new images and update URLs
       const segments: SegmentType[] = ["swim", "bike", "run"];
       for (const segment of segments) {
@@ -551,15 +579,15 @@ export default function TemplateEditPage() {
           <TabsTrigger value="checkpoints">Checkpoints</TabsTrigger>
         </TabsList>
 
-        {localTemplate ? (
+        {template ? (
           <>
             <TabsContent value="basic">
-              <BasicInfoTab template={localTemplate} />
+              <BasicInfoTab template={template} />
             </TabsContent>
 
             <TabsContent value="route">
               <RouteMapsTab
-                template={localTemplate}
+                template={template}
                 checkpoints={checkpoints}
                 currentSegment={currentSegment}
                 onSegmentChange={setCurrentSegment}

@@ -8,7 +8,14 @@ export interface RouteData {
   color: string;
   laps: number; // Number of laps for this route
 }
-
+export interface SegmentRoutData {
+  segmentType: string;
+  // segmentName: string;
+  templateId: number;
+  points: RoutePoint[];
+  color: string;
+  segmentMapUrl:string;
+}
 export type Template = {
   id: number;
   name: string;
