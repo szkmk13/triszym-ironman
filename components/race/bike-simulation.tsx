@@ -1,69 +1,90 @@
-"use client"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useEffect, useRef, useState } from "react"
-import { calculateBikeSpeed, durationToSeconds } from "@/lib/supabase-utils"
-import { useAthleteTimeOnGivenCheckpoint } from "@/lib/queries"
-import type { Athlete, AthleteTime, RoutePoint, Template } from "@/lib/supabase-types"
+"use client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useRef, useState } from "react";
+import { calculateBikeSpeed, durationToSeconds } from "@/lib/supabase-utils";
+import { useAthleteTimeOnGivenCheckpoint } from "@/lib/queries";
+import type {
+  Athlete,
+  AthleteTime,
+  RoutePoint,
+  Template,
+} from "@/lib/supabase-types";
 
 interface Cyclist extends Athlete {
-  startTime?: Date
-  color: string
-  currentPosition: number
-  distanceCovered: number
-  isActive: boolean
-  hasStarted: boolean
-  currentLap: number
-  totalLaps: number
+  startTime?: Date;
+  color: string;
+  currentPosition: number;
+  distanceCovered: number;
+  isActive: boolean;
+  hasStarted: boolean;
+  currentLap: number;
+  totalLaps: number;
 }
 
 interface SimulationTabProps {
-  template: Template
-  athletes: Athlete[]
-  bikeStartCheckpointId: number
-  mapImageUrl?: string
-  routePoints?: RoutePoint[]
+  template: Template;
+  athletes: Athlete[];
+  bikeStartCheckpointId: number;
+  mapImageUrl?: string;
+  routePoints?: RoutePoint[];
 }
 
-export default function BikeSimulation({ template, athletes, bikeStartCheckpointId }: SimulationTabProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [currentTime, setCurrentTime] = useState<Date>(new Date())
-  const [cyclists, setCyclists] = useState<Cyclist[]>([])
-  const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null)
+export default function BikeSimulation({
+  template,
+  athletes,
+  bikeStartCheckpointId,
+}: SimulationTabProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [cyclists, setCyclists] = useState<Cyclist[]>([]);
+  const [mapImage, setMapImage] = useState<HTMLImageElement | null>(null);
 
-  const totalLaps = template?.bike_route_data?.laps || 1
-  const routePoints = template?.bike_route_data?.points || []
-  const mapImageUrl = template?.bike_map_url || "/placeholder.svg?height=600&width=800&text=Bicycle+Route+Map"
+  const totalLaps = template?.bike_route_data?.laps || 1;
+  const routePoints = template?.bike_route_data?.points || [];
+  const mapImageUrl =
+    template?.bike_map_url ||
+    "/placeholder.svg?height=600&width=800&text=Bicycle+Route+Map";
 
-  const lapDistance = template.bike_distance * 1000/totalLaps // Distance per lap in meters
+  const lapDistance = (template.bike_distance * 1000) / totalLaps; // Distance per lap in meters
 
-  const { data: checkpointData, isLoading, error } = useAthleteTimeOnGivenCheckpoint(bikeStartCheckpointId)
+  const {
+    data: checkpointData,
+    isLoading,
+    error,
+  } = useAthleteTimeOnGivenCheckpoint(bikeStartCheckpointId);
 
   useEffect(() => {
-    const img = new Image()
-    img.crossOrigin = "anonymous"
-    img.onload = () => setMapImage(img)
-    img.src = mapImageUrl
-  }, [mapImageUrl])
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => setMapImage(img);
+    img.src = mapImageUrl;
+  }, [mapImageUrl]);
 
   useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(new Date()), 2500)
-    return () => clearInterval(interval)
-  }, [])
+    const interval = setInterval(() => setCurrentTime(new Date()), 2500);
+    return () => clearInterval(interval);
+  }, []);
 
-  const calculateCyclistPosition = (athlete: Athlete, checkpoint: AthleteTime | undefined) => {
-    if (!checkpoint?.actual_time) return defaultState(false)
+  const calculateCyclistPosition = (
+    athlete: Athlete,
+    checkpoint: AthleteTime | undefined
+  ) => {
+    if (!checkpoint?.actual_time) return defaultState(false);
 
-    const startTime = new Date(checkpoint.actual_time)
-    const hasStarted = currentTime >= startTime
-    if (!hasStarted) return defaultState(false)
+    const startTime = new Date(checkpoint.actual_time);
+    const hasStarted = currentTime >= startTime;
+    if (!hasStarted) return defaultState(false);
 
-    const timeElapsed = (currentTime.getTime() - startTime.getTime()) / 1000
-    const totalDuration = durationToSeconds(athlete.predicted_bike_time)
-    const totalDistance = template.bike_distance * 1000 // Total distance across all laps
-    const distance = Math.min((timeElapsed / totalDuration) * totalDistance, totalDistance)
+    const timeElapsed = (currentTime.getTime() - startTime.getTime()) / 1000;
+    const totalDuration = durationToSeconds(athlete.predicted_bike_time);
+    const totalDistance = template.bike_distance * 1000; // Total distance across all laps
+    const distance = Math.min(
+      (timeElapsed / totalDuration) * totalDistance,
+      totalDistance
+    );
 
-    const currentLap = Math.floor(distance / lapDistance) + 1
-    const clampedLap = Math.min(currentLap, totalLaps)
+    const currentLap = Math.floor(distance / lapDistance) + 1;
+    const clampedLap = Math.min(currentLap, totalLaps);
 
     return {
       currentPosition: 0,
@@ -72,39 +93,42 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
       hasStarted: true,
       currentLap: clampedLap,
       totalLaps: totalLaps,
-    }
-  }
+    };
+  };
 
-  const calculateSpeedPosition = (athlete: Athlete, targetSpeed: number, checkpoint: AthleteTime | undefined) => {
-    if (!checkpoint?.actual_time) return null
+  const calculateSpeedPosition = (
+    athlete: Athlete,
+    targetSpeed: number,
+    checkpoint: AthleteTime | undefined
+  ) => {
+    if (!checkpoint?.actual_time) return null;
 
-    const startTime = new Date(checkpoint.actual_time)
-    const hasStarted = currentTime >= startTime
-    if (!hasStarted) return null
+    const startTime = new Date(checkpoint.actual_time);
+    const hasStarted = currentTime >= startTime;
+    if (!hasStarted) return null;
 
-    const timeElapsed = (currentTime.getTime() - startTime.getTime()) / 1000
-    const totalDistance = template.bike_distance * 1000 // Total distance across all laps
+    const timeElapsed = (currentTime.getTime() - startTime.getTime()) / 1000;
+    const totalDistance = template.bike_distance * 1000; // Total distance across all laps
 
-    const speedMs = (targetSpeed * 1000) / 3600
-    const distanceAtSpeed = Math.min(speedMs * timeElapsed, totalDistance)
+    const speedMs = (targetSpeed * 1000) / 3600;
+    const distanceAtSpeed = Math.min(speedMs * timeElapsed, totalDistance);
 
-    if (distanceAtSpeed <= 0) return null
+    if (distanceAtSpeed <= 0) return null;
 
-
-    const distanceInCurrentLap = Math.floor(distanceAtSpeed% lapDistance) 
-    const progress = Math.min(distanceInCurrentLap / lapDistance, 1)
+    const distanceInCurrentLap = Math.floor(distanceAtSpeed % lapDistance);
+    const progress = Math.min(distanceInCurrentLap / lapDistance, 1);
 
     // const progress = distanceAtSpeed / totalDistance
-    const segIndex = Math.floor(progress * (routePoints.length - 1))
-    const segProg = progress * (routePoints.length - 1) - segIndex
-    const current = routePoints[segIndex] || routePoints[0]
-    const next = routePoints[segIndex + 1] || current
+    const segIndex = Math.floor(progress * (routePoints.length - 1));
+    const segProg = progress * (routePoints.length - 1) - segIndex;
+    const current = routePoints[segIndex] || routePoints[0];
+    const next = routePoints[segIndex + 1] || current;
 
     return {
       x: current.x + (next.x - current.x) * segProg,
       y: current.y + (next.y - current.y) * segProg,
-    }
-  }
+    };
+  };
 
   function defaultState(started: boolean) {
     return {
@@ -114,173 +138,194 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
       hasStarted: started,
       currentLap: started ? 1 : 0,
       totalLaps: totalLaps,
-    }
+    };
   }
 
   const calculateCanvasPosition = (cyclist: Cyclist) => {
-    if (!cyclist.hasStarted || !routePoints.length) return { x: 0, y: 0 }
+    if (!cyclist.hasStarted || !routePoints.length) return { x: 0, y: 0 };
 
-    const distanceInCurrentLap = cyclist.distanceCovered % lapDistance
-    const progress = Math.min(distanceInCurrentLap / lapDistance, 1)
+    const distanceInCurrentLap = cyclist.distanceCovered % lapDistance;
+    const progress = Math.min(distanceInCurrentLap / lapDistance, 1);
 
-    const segIndex = Math.floor(progress * (routePoints.length - 1))
-    const segProg = progress * (routePoints.length - 1) - segIndex
-    const current = routePoints[segIndex] || routePoints[0]
-    const next = routePoints[segIndex + 1] || current
+    const segIndex = Math.floor(progress * (routePoints.length - 1));
+    const segProg = progress * (routePoints.length - 1) - segIndex;
+    const current = routePoints[segIndex] || routePoints[0];
+    const next = routePoints[segIndex + 1] || current;
 
     return {
       x: current.x + (next.x - current.x) * segProg,
       y: current.y + (next.y - current.y) * segProg,
-    }
-  }
+    };
+  };
 
   useEffect(() => {
-    if (!canvasRef.current || !routePoints.length || !mapImage) return
+    if (!canvasRef.current || !routePoints.length || !mapImage) return;
 
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    const scale = Math.min(800 / mapImage.width, 600 / mapImage.height)
-    const scaledWidth = mapImage.width * scale
-    const scaledHeight = mapImage.height * scale
+    const scale = Math.min(800 / mapImage.width, 600 / mapImage.height);
+    const scaledWidth = mapImage.width * scale;
+    const scaledHeight = mapImage.height * scale;
 
-    canvas.width = scaledWidth
-    canvas.height = scaledHeight
+    canvas.width = scaledWidth;
+    canvas.height = scaledHeight;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(mapImage, 0, 0, scaledWidth, scaledHeight)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(mapImage, 0, 0, scaledWidth, scaledHeight);
 
     if (routePoints.length > 1) {
-      ctx.strokeStyle = "#10B981"
-      ctx.lineWidth = 0.8
-      ctx.beginPath()
-      ctx.moveTo(routePoints[0].x * scale, routePoints[0].y * scale)
+      ctx.strokeStyle = "#10B981";
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(routePoints[0].x * scale, routePoints[0].y * scale);
       for (let i = 1; i < routePoints.length; i++) {
-        ctx.lineTo(routePoints[i].x * scale, routePoints[i].y * scale)
+        ctx.lineTo(routePoints[i].x * scale, routePoints[i].y * scale);
       }
-      ctx.stroke()
+      ctx.stroke();
     }
 
     cyclists.forEach((cyclist) => {
-      if (!cyclist.hasStarted) return
+      if (!cyclist.hasStarted) return;
 
-      const checkpoint = checkpointData?.find((c) => c.athlete_id === Number(cyclist.id))
-      const pos30 = calculateSpeedPosition(cyclist, 100, checkpoint)
-      const pos25 = calculateSpeedPosition(cyclist, 80, checkpoint)
+      const checkpoint = checkpointData?.find(
+        (c) => c.athlete_id === Number(cyclist.id)
+      );
+      const pos30 = calculateSpeedPosition(cyclist, 100, checkpoint);
+      const pos25 = calculateSpeedPosition(cyclist, 80, checkpoint);
 
       if (pos30 && pos25) {
-        ctx.globalAlpha = 1
-        ctx.beginPath()
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
 
-        const total = template.bike_distance * 1000
-        const timeElapsed = (currentTime.getTime() - new Date(checkpoint?.actual_time || 0).getTime()) / 1000
+        const total = template.bike_distance * 1000;
+        const timeElapsed =
+          (currentTime.getTime() -
+            new Date(checkpoint?.actual_time || 0).getTime()) /
+          1000;
 
-        const speed30Ms = (100 * 1000) / 3600
-        const speed25Ms = (80 * 1000) / 3600
+        const speed30Ms = (100 * 1000) / 3600;
+        const speed25Ms = (80 * 1000) / 3600;
 
-        const distance30 = Math.min(speed30Ms * timeElapsed, total)
-        const distance25 = Math.min(speed25Ms * timeElapsed, total)
-        console.log(distance25,distance30)
+        const distance30 = Math.min(speed30Ms * timeElapsed, total);
+        const distance25 = Math.min(speed25Ms * timeElapsed, total);
+        console.log(distance25, distance30);
 
-        const distanceInCurrentLap25 = Math.floor(distance25% lapDistance) 
-        const distanceInCurrentLap30 = Math.floor(distance30% lapDistance) 
+        const distanceInCurrentLap25 = Math.floor(distance25 % lapDistance);
+        const distanceInCurrentLap30 = Math.floor(distance30 % lapDistance);
 
-        const progress30 = Math.min(distanceInCurrentLap30 / lapDistance, 1)
-        const progress25 = Math.min(distanceInCurrentLap25 / lapDistance, 1)
-        console.log(progress25,progress30)
-        const startIndex = Math.floor(progress25 * (routePoints.length))
-        const endIndex = Math.floor(progress30 * (routePoints.length - 1))
+        const progress30 = Math.min(distanceInCurrentLap30 / lapDistance, 1);
+        const progress25 = Math.min(distanceInCurrentLap25 / lapDistance, 1);
+        console.log(progress25, progress30);
+        const startIndex = Math.floor(progress25 * routePoints.length);
+        const endIndex = Math.floor(progress30 * (routePoints.length - 1));
 
-        console.log(distanceInCurrentLap25,distanceInCurrentLap30)
+        console.log(distanceInCurrentLap25, distanceInCurrentLap30);
 
         if (startIndex < endIndex) {
-          ctx.moveTo(pos25.x * scale, pos25.y * scale)
+          ctx.moveTo(pos25.x * scale, pos25.y * scale);
           for (let i = startIndex; i <= endIndex; i++) {
-            const point = routePoints[i]
-            ctx.lineTo(point.x * scale, point.y * scale)
+            const point = routePoints[i];
+            ctx.lineTo(point.x * scale, point.y * scale);
           }
-          ctx.lineTo(pos30.x * scale, pos30.y * scale)
-          ctx.lineWidth = 4
+          ctx.lineTo(pos30.x * scale, pos30.y * scale);
+          ctx.lineWidth = 4;
 
-          
+          const gradient = ctx.createLinearGradient(
+            pos25.x * scale,
+            pos25.y * scale,
+            pos30.x * scale,
+            pos30.y * scale
+          );
+          gradient.addColorStop(0, "#3B82F6"); // kolor na początku
+          gradient.addColorStop(1, "#EC4899"); // kolor na końcu
 
-  const gradient = ctx.createLinearGradient(
-    pos25.x * scale,
-    pos25.y * scale,
-    pos30.x * scale,
-    pos30.y * scale
-  );
-  gradient.addColorStop(0, "#3B82F6");   // kolor na początku
-  gradient.addColorStop(1, "#EC4899");   // kolor na końcu
-
-  ctx.strokeStyle = gradient; // ustawiamy gradient jako kolor linii
-  ctx.stroke();
-
-
-
+          ctx.strokeStyle = gradient; // ustawiamy gradient jako kolor linii
+          ctx.stroke();
         }
-        ctx.globalAlpha = 1
+        ctx.globalAlpha = 1;
       }
-    })
+    });
 
     cyclists.forEach((cyclist) => {
-      if (!cyclist.hasStarted) return
+      if (!cyclist.hasStarted) return;
 
-      const position = calculateCanvasPosition(cyclist)
+      const position = calculateCanvasPosition(cyclist);
 
-      ctx.fillStyle = cyclist.color
-      ctx.strokeStyle = "#fff"
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.arc(position.x * scale, position.y * scale, 8, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.stroke()
+      ctx.fillStyle = cyclist.color;
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(position.x * scale, position.y * scale, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
 
-      ctx.fillStyle = "#fff"
-      ctx.font = "bold 12px Arial"
-      ctx.textAlign = "center"
-      ctx.fillText(cyclist.currentPosition.toString(), position.x * scale, position.y * scale + 4)
-    })
-  }, [cyclists, routePoints, totalLaps, currentTime, checkpointData, mapImage])
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 12px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(
+        cyclist.currentPosition.toString(),
+        position.x * scale,
+        position.y * scale + 4
+      );
+    });
+  }, [cyclists, routePoints, totalLaps, currentTime, checkpointData, mapImage]);
 
   useEffect(() => {
-    if (!checkpointData || athletes.length === 0) return
+    if (!checkpointData || athletes.length === 0) return;
 
-    const palette = ["#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"]
+    const palette = [
+      "#3B82F6",
+      "#EF4444",
+      "#10B981",
+      "#F59E0B",
+      "#8B5CF6",
+      "#EC4899",
+    ];
     const updated = athletes.map((athlete, i) => {
-      const cp = checkpointData.find((c) => c.athlete_id === Number(athlete.id))
-      const pos = calculateCyclistPosition(athlete, cp)
+      const cp = checkpointData.find(
+        (c) => c.athlete_id === Number(athlete.id)
+      );
+      const pos = calculateCyclistPosition(athlete, cp);
       return {
         ...athlete,
         startTime: cp?.actual_time ? new Date(cp.actual_time) : undefined,
         color: palette[i % palette.length],
         ...pos,
-      }
-    })
+      };
+    });
 
-    const ranked = [...updated].sort((a, b) => b.distanceCovered - a.distanceCovered)
+    const ranked = [...updated].sort(
+      (a, b) => b.distanceCovered - a.distanceCovered
+    );
     const final = updated.map((cyclist) => ({
       ...cyclist,
-      currentPosition: cyclist.hasStarted ? ranked.findIndex((c) => c.id === cyclist.id) + 1 : 0,
-    }))
+      currentPosition: cyclist.hasStarted
+        ? ranked.findIndex((c) => c.id === cyclist.id) + 1
+        : 0,
+    }));
 
-    setCyclists(final)
-  }, [checkpointData, athletes, currentTime])
+    setCyclists(final);
+  }, [checkpointData, athletes, currentTime]);
 
   if (isLoading)
     return (
       <Card>
-        <CardContent className="p-8 text-center">Loading simulation...</CardContent>
+        <CardContent className="p-8 text-center">
+          Loading simulation...
+        </CardContent>
       </Card>
-    )
+    );
 
   if (error)
     return (
       <Card>
-        <CardContent className="p-8 text-center text-red-600">Error loading data: {error.message}</CardContent>
+        <CardContent className="p-8 text-center text-red-600">
+          Error loading data: {error.message}
+        </CardContent>
       </Card>
-    )
+    );
 
   return (
     <div className="space-y-4">
@@ -300,19 +345,26 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <canvas ref={canvasRef} className="max-w-full h-auto border rounded bg-gray-50" />
+            <canvas
+              ref={canvasRef}
+              className="max-w-full h-auto border rounded bg-gray-50"
+            />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {cyclists
                 .sort((a, b) => a.currentPosition - b.currentPosition)
                 .map((cyclist) => {
-                  const total = template.bike_distance * 1000  // Total distance across all laps
-                  const progress = (cyclist.distanceCovered / total) * 100
-                  const finished = progress >= 100
+                  const total = template.bike_distance * 1000; // Total distance across all laps
+                  const progress = (cyclist.distanceCovered / total) * 100;
+                  const finished = progress >= 100;
                   return (
                     <Card
                       key={cyclist.id}
                       className={`${
-                        finished ? "ring-2 ring-green-500" : cyclist.isActive ? "ring-1 ring-blue-300" : ""
+                        finished
+                          ? "ring-2 ring-green-500"
+                          : cyclist.isActive
+                          ? "ring-1 ring-blue-300"
+                          : ""
                       }`}
                     >
                       <CardContent className="p-4">
@@ -327,13 +379,19 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
                             <h3 className="font-semibold">{cyclist.name}</h3>
                             <div className="flex gap-2">
                               {finished && (
-                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">FINISHED</span>
+                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                  FINISHED
+                                </span>
                               )}
                               {cyclist.isActive && !finished && (
-                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">CYCLING</span>
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  CYCLING
+                                </span>
                               )}
                               {!cyclist.hasStarted && (
-                                <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">WAITING</span>
+                                <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                                  WAITING
+                                </span>
                               )}
                               {cyclist.hasStarted && (
                                 <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
@@ -354,17 +412,25 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
                           )}
                           <div className="flex justify-between">
                             <span>Distance:</span>
-                            <span className="font-mono">{Math.round(cyclist.distanceCovered)}m</span>
+                            <span className="font-mono">
+                              {Math.round(cyclist.distanceCovered)}m
+                            </span>
                           </div>
                           <div className="flex justify-between">
                             <span>Progress:</span>
-                            <span className="font-mono">{progress.toFixed(1)}%</span>
+                            <span className="font-mono">
+                              {progress.toFixed(1)}%
+                            </span>
                           </div>
                           {cyclist.hasStarted && (
                             <div className="flex justify-between">
                               <span>Current Pace:</span>
                               <span className="font-mono">
-                                {calculateBikeSpeed(cyclist.predicted_bike_time, template.bike_distance)} km/h
+                                {calculateBikeSpeed(
+                                  cyclist.predicted_bike_time,
+                                  template.bike_distance
+                                )}{" "}
+                                km/h
                               </span>
                             </div>
                           )}
@@ -380,15 +446,17 @@ export default function BikeSimulation({ template, athletes, bikeStartCheckpoint
                         </div>
                       </CardContent>
                     </Card>
-                  )
+                  );
                 })}
             </div>
             {cyclists.length === 0 && !isLoading && (
-              <div className="text-center text-muted-foreground py-8">No athlete data found for this checkpoint.</div>
+              <div className="text-center text-muted-foreground py-8">
+                No athlete data found for this checkpoint.
+              </div>
             )}
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
