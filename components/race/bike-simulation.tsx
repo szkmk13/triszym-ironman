@@ -34,6 +34,8 @@ export default function BikeSimulation({
   athletes,
   bikeStartCheckpointId,
 }: SimulationTabProps) {
+  const MAX_PREDICTED_SPEED = 100;
+  const MIN_PREDICTED_SPEED = 80;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [cyclists, setCyclists] = useState<Cyclist[]>([]);
@@ -192,8 +194,16 @@ export default function BikeSimulation({
       const checkpoint = checkpointData?.find(
         (c) => c.athlete_id === Number(cyclist.id)
       );
-      const pos30 = calculateSpeedPosition(cyclist, 100, checkpoint);
-      const pos25 = calculateSpeedPosition(cyclist, 80, checkpoint);
+      const pos30 = calculateSpeedPosition(
+        cyclist,
+        MAX_PREDICTED_SPEED,
+        checkpoint
+      );
+      const pos25 = calculateSpeedPosition(
+        cyclist,
+        MIN_PREDICTED_SPEED,
+        checkpoint
+      );
 
       if (pos30 && pos25) {
         ctx.globalAlpha = 1;
@@ -205,8 +215,8 @@ export default function BikeSimulation({
             new Date(checkpoint?.actual_time || 0).getTime()) /
           1000;
 
-        const speed30Ms = (100 * 1000) / 3600;
-        const speed25Ms = (80 * 1000) / 3600;
+        const speed30Ms = (MAX_PREDICTED_SPEED * 1000) / 3600;
+        const speed25Ms = (MIN_PREDICTED_SPEED * 1000) / 3600;
 
         const distance30 = Math.min(speed30Ms * timeElapsed, total);
         const distance25 = Math.min(speed25Ms * timeElapsed, total);
@@ -331,16 +341,18 @@ export default function BikeSimulation({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="flex justify-between">
-            Live Preview - Biking Checkpoint {bikeStartCheckpointId}
+          <CardTitle>
+            Live Preview - Biking
+            <span className="text-sm font-normal text-muted-foreground pl-2">
+              Updated:{" "}
+              {currentTime.toLocaleTimeString("en-GB", { hour12: false })}
+            </span>
             {totalLaps > 1 && (
               <span className="text-sm font-normal text-muted-foreground">
-                {totalLaps} Laps • {(lapDistance / 1000).toFixed(1)}km per lap
+                {" • "}
+                {totalLaps} Laps - {(lapDistance / 1000).toFixed(1)}km per lap
               </span>
             )}
-            <span className="text-sm font-normal text-muted-foreground">
-              Updated: {currentTime.toLocaleTimeString()}
-            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
