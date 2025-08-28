@@ -6,6 +6,7 @@ import {
   TemplateCheckpoint,
   AthleteTime,
   SegmentRoutData,
+  AthleteTimeWithDistance,
 } from "./supabase-types";
 import { toast } from "sonner";
 
@@ -153,15 +154,26 @@ export function useAthleteTimeOnGivenCheckpoint(checkpointId: number) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("athlete_times")
-        .select("*")
+        .select(`
+          *,
+          checkpoint:checkpoint_id (
+            distance_km
+          )
+        `)
         .eq("checkpoint_id", checkpointId);
 
       if (error) throw error;
-      return data as AthleteTime[];
+
+      // Flatten so you can access `data[0].distance` directly
+      return data.map((row) => ({
+        ...row,
+        distance: row.checkpoint?.distance_km ?? null,
+      })) as AthleteTimeWithDistance[];
     },
     enabled: !!checkpointId,
   });
 }
+
 
 // Mutations
 export function useCreateAthlete() {

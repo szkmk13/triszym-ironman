@@ -34,6 +34,7 @@ export default function RaceDetailPage() {
     );
   }
   const checkpoints = template.checkpoints;
+  // this works for multiple racers
 
   const findIdByName = (items: TemplateCheckpoint[], targetName: string) => {
     const found = items.find((item) => item.checkpoint_type === targetName);
@@ -41,9 +42,8 @@ export default function RaceDetailPage() {
   };
 
   const swimStartCheckpointId = findIdByName(checkpoints, "swim_start");
-  const bikeStartCheckpointId = findIdByName(checkpoints, "t1_finish");
+  // const bikeStartCheckpointId = findIdByName(checkpoints, "t1_finish");
   const runStartCheckpointId = findIdByName(checkpoints, "t2_finish");
-
   const haveAllAthletesReachedCheckpoint = (
     athletes: Athlete[],
     checkpointId: number
@@ -53,6 +53,16 @@ export default function RaceDetailPage() {
     );
   };
 
+  console.log(athletes[0].times[0])
+const filtered = athletes[0].times.filter(t => t?.checkpoint.checkpoint_type.includes("bike"));
+const bikeStartCheckpointId = filtered[filtered.length - 1]?.checkpoint.id;
+
+
+const t1Finished =
+  athletes[0].times.find(t => t?.checkpoint.checkpoint_type.includes("t1"))?.actual_time || null;
+
+console.log(t1Finished)
+
   const swimPartIsFinished = haveAllAthletesReachedCheckpoint(
     athletes,
     bikeStartCheckpointId
@@ -61,8 +71,11 @@ export default function RaceDetailPage() {
     athletes,
     runStartCheckpointId
   );
-
-
+//ironman specific function
+//   console.log(athletes)
+// const last = athletes[0].times[athletes[0].times.length - 1];
+// console.log(last.checkpoint.id);
+// const bikeStartCheckpointId = last.checkpoint.id
   return (
     <div className="container mx-auto p-6 space-y-6">
       <RaceHeader template={template} onBack={() => router.back()} />
@@ -95,6 +108,7 @@ export default function RaceDetailPage() {
             template={template}
             athletes={athletes}
             bikeStartCheckpointId={bikeStartCheckpointId}
+            t1FinishedCheckpoint={t1Finished}
             // currentBikeCheckpoint={currentBikeCheckpoint}
           />
         </>

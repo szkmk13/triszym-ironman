@@ -1,11 +1,12 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useRef, useState } from "react";
-import { calculateBikeSpeed, durationToSeconds } from "@/lib/supabase-utils";
+import { calculateBikeSpeed, durationToSeconds, formatTimeDiff } from "@/lib/supabase-utils";
 import { useAthleteTimeOnGivenCheckpoint } from "@/lib/queries";
 import type {
   Athlete,
   AthleteTime,
+  AthleteTimeWithDistance,
   RoutePoint,
   Template,
 } from "@/lib/supabase-types";
@@ -27,12 +28,14 @@ interface SimulationTabProps {
   bikeStartCheckpointId: number;
   mapImageUrl?: string;
   routePoints?: RoutePoint[];
+  t1FinishedCheckpoint:string
 }
 
 export default function BikeSimulation({
   template,
   athletes,
   bikeStartCheckpointId,
+  t1FinishedCheckpoint,
 }: SimulationTabProps) {
   const MAX_PREDICTED_SPEED = 100;
   const MIN_PREDICTED_SPEED = 80;
@@ -48,12 +51,12 @@ export default function BikeSimulation({
     "/placeholder.svg?height=600&width=800&text=Bicycle+Route+Map";
 
   const lapDistance = (template.bike_distance * 1000) / totalLaps; // Distance per lap in meters
-
   const {
     data: checkpointData,
     isLoading,
     error,
   } = useAthleteTimeOnGivenCheckpoint(bikeStartCheckpointId);
+  // console.log(bikeStartCheckpointId,checkpointData,t1FinishedCheckpoint)
 
   useEffect(() => {
     const img = new Image();
@@ -69,7 +72,7 @@ export default function BikeSimulation({
 
   const calculateCyclistPosition = (
     athlete: Athlete,
-    checkpoint: AthleteTime | undefined
+    checkpoint: AthleteTimeWithDistance | undefined
   ) => {
     if (!checkpoint?.actual_time) return defaultState(false);
 
@@ -80,8 +83,12 @@ export default function BikeSimulation({
     const timeElapsed = (currentTime.getTime() - startTime.getTime()) / 1000;
     const totalDuration = durationToSeconds(athlete.predicted_bike_time);
     const totalDistance = template.bike_distance * 1000; // Total distance across all laps
+    // console.log("as",checkpoint.distance*1000,
+    //   (timeElapsed / totalDuration) * totalDistance+checkpoint.distance*1000,
+    //   totalDistance
+    // )
     const distance = Math.min(
-      (timeElapsed / totalDuration) * totalDistance,
+      (timeElapsed / totalDuration) * totalDistance+checkpoint.distance*1000,
       totalDistance
     );
 
@@ -220,18 +227,18 @@ export default function BikeSimulation({
 
         const distance30 = Math.min(speed30Ms * timeElapsed, total);
         const distance25 = Math.min(speed25Ms * timeElapsed, total);
-        console.log(distance25, distance30);
+        // console.log(distance25, distance30);
 
         const distanceInCurrentLap25 = Math.floor(distance25 % lapDistance);
         const distanceInCurrentLap30 = Math.floor(distance30 % lapDistance);
 
         const progress30 = Math.min(distanceInCurrentLap30 / lapDistance, 1);
         const progress25 = Math.min(distanceInCurrentLap25 / lapDistance, 1);
-        console.log(progress25, progress30);
+        // console.log(progress25, progress30);
         const startIndex = Math.floor(progress25 * routePoints.length);
         const endIndex = Math.floor(progress30 * (routePoints.length - 1));
 
-        console.log(distanceInCurrentLap25, distanceInCurrentLap30);
+        // console.log(distanceInCurrentLap25, distanceInCurrentLap30);
 
         if (startIndex < endIndex) {
           ctx.moveTo(pos25.x * scale, pos25.y * scale);
@@ -368,7 +375,19 @@ export default function BikeSimulation({
                   const total = template.bike_distance * 1000; // Total distance across all laps
                   const progress = (cyclist.distanceCovered / total) * 100;
                   const finished = progress >= 100;
-                  return (
+
+                  const t1Finished = cyclist.times?.find(t => t?.checkpoint.checkpoint_type.includes("t1"))?.actual_time;
+                  const filtered1 = cyclist.times?.filter(t => t?.checkpoint.checkpoint_type.includes("bike"));
+                  const lastBikeCheckpoint = filtered1?.slice(-1)[0]
+                  const lastcheckopinttime = lastBikeCheckpoint?.actual_time||null;
+                  console.log(cyclist,"CYCLIST",t1Finished,lastcheckopinttime)
+                  const timeSinceT1 = formatTimeDiff(t1Finished,lastcheckopinttime);
+                  const distanceSinceT1 = lastBikeCheckpoint?.checkpoint.distance_km
+                  console.log(timeSinceT1,distanceSinceT1)
+
+
+
+return (
                     <Card
                       key={cyclist.id}
                       className={`${
@@ -416,27 +435,27 @@ export default function BikeSimulation({
                         <div className="text-sm space-y-1">
                           {cyclist.hasStarted && (
                             <div className="flex justify-between">
-                              <span>Current Lap:</span>
+                              <span>Okrążenie:</span>
                               <span className="font-mono">
-                                {cyclist.currentLap} of {cyclist.totalLaps}
+                                {cyclist.currentLap} z {cyclist.totalLaps}
                               </span>
                             </div>
                           )}
                           <div className="flex justify-between">
-                            <span>Distance:</span>
+                            <span>Dystans(+/-):</span>
                             <span className="font-mono">
                               {Math.round(cyclist.distanceCovered)}m
                             </span>
                           </div>
                           <div className="flex justify-between">
-                            <span>Progress:</span>
+                            <span>Progres:</span>
                             <span className="font-mono">
                               {progress.toFixed(1)}%
                             </span>
                           </div>
                           {cyclist.hasStarted && (
-                            <div className="flex justify-between">
-                              <span>Current Pace:</span>
+                            <><div className="flex justify-between">
+                              <span>Przewidziana prędkość:</span>
                               <span className="font-mono">
                                 {calculateBikeSpeed(
                                   cyclist.predicted_bike_time,
@@ -445,6 +464,16 @@ export default function BikeSimulation({
                                 km/h
                               </span>
                             </div>
+                                                        <div className="flex justify-between">
+                              <span>Średnia prędkość:</span>
+                              <span className="font-mono">
+                                {calculateBikeSpeed(
+                                  timeSinceT1,
+                                  distanceSinceT1
+                                )}{" "}
+                                km/h
+                              </span>
+                            </div></>
                           )}
                         </div>
                         <div className="w-full bg-gray-200 h-3 rounded-full mt-3">

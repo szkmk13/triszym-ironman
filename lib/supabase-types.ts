@@ -62,3 +62,6 @@ export type AthleteTime = {
   actual_time: string;
   checkpoint: TemplateCheckpoint
 };
+export type AthleteTimeWithDistance = AthleteTime & {
+  distance: number;
+};

@@ -179,7 +179,21 @@ export function calculateSwimPace(
 
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
+export function formatTimeDiff(startTime:string|undefined,endTime:string|null) {
+  let endDate = new Date().getTime()
+  if (endTime) {
+    endDate = new Date(endTime).getTime(); 
+  }
+  const startDate = new Date(startTime).getTime(); 
+  const diffMs = endDate-startDate
+  const totalSeconds = Math.floor(diffMs / 1000);
 
+  const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+  const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+
+  return `${hours}:${minutes}:${seconds}`;
+}
 export function calculateBikeSpeed(
   timeStr: string | null,
   distanceKm: number
