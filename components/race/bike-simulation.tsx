@@ -20,22 +20,21 @@ interface Cyclist extends Athlete {
   hasStarted: boolean;
   currentLap: number;
   totalLaps: number;
+  distanceSinceT1: number
 }
 
 interface SimulationTabProps {
   template: Template;
-  athletes: Athlete[];
+  athletes: Cyclist[];
   bikeStartCheckpointId: number;
   mapImageUrl?: string;
   routePoints?: RoutePoint[];
-  t1FinishedCheckpoint:string
 }
 
 export default function BikeSimulation({
   template,
   athletes,
   bikeStartCheckpointId,
-  t1FinishedCheckpoint,
 }: SimulationTabProps) {
   const MAX_PREDICTED_SPEED = 100;
   const MIN_PREDICTED_SPEED = 80;
@@ -56,7 +55,6 @@ export default function BikeSimulation({
     isLoading,
     error,
   } = useAthleteTimeOnGivenCheckpoint(bikeStartCheckpointId);
-  // console.log(bikeStartCheckpointId,checkpointData,t1FinishedCheckpoint)
 
   useEffect(() => {
     const img = new Image();
@@ -71,7 +69,7 @@ export default function BikeSimulation({
   }, []);
 
   const calculateCyclistPosition = (
-    athlete: Athlete,
+    athlete: Cyclist,
     checkpoint: AthleteTimeWithDistance | undefined
   ) => {
     if (!checkpoint?.actual_time) return defaultState(false);
@@ -106,12 +104,12 @@ export default function BikeSimulation({
   };
 
   const calculateSpeedPosition = (
-    athlete: Athlete,
+    athlete: Cyclist,
     targetSpeed: number,
     checkpoint: AthleteTime | undefined
   ) => {
     if (!checkpoint?.actual_time) return null;
-
+    console.log(athlete,'ATHLETE')
     const startTime = new Date(checkpoint.actual_time);
     const hasStarted = currentTime >= startTime;
     if (!hasStarted) return null;
@@ -120,13 +118,13 @@ export default function BikeSimulation({
     const totalDistance = template.bike_distance * 1000; // Total distance across all laps
 
     const speedMs = (targetSpeed * 1000) / 3600;
-    const distanceAtSpeed = Math.min(speedMs * timeElapsed, totalDistance);
+    const distanceAtSpeed = Math.min(speedMs * timeElapsed+athlete.distanceSinceT1, totalDistance);
 
     if (distanceAtSpeed <= 0) return null;
 
     const distanceInCurrentLap = Math.floor(distanceAtSpeed % lapDistance);
     const progress = Math.min(distanceInCurrentLap / lapDistance, 1);
-
+    console.log(progress)
     // const progress = distanceAtSpeed / totalDistance
     const segIndex = Math.floor(progress * (routePoints.length - 1));
     const segProg = progress * (routePoints.length - 1) - segIndex;
@@ -197,7 +195,7 @@ export default function BikeSimulation({
 
     cyclists.forEach((cyclist) => {
       if (!cyclist.hasStarted) return;
-
+      console.log(cyclist,'CYC')
       const checkpoint = checkpointData?.find(
         (c) => c.athlete_id === Number(cyclist.id)
       );
@@ -211,7 +209,7 @@ export default function BikeSimulation({
         MIN_PREDICTED_SPEED,
         checkpoint
       );
-
+      // console.log(pos25,pos30)
       if (pos30 && pos25) {
         ctx.globalAlpha = 1;
         ctx.beginPath();
@@ -222,23 +220,22 @@ export default function BikeSimulation({
             new Date(checkpoint?.actual_time || 0).getTime()) /
           1000;
 
-        const speed30Ms = (MAX_PREDICTED_SPEED * 1000) / 3600;
-        const speed25Ms = (MIN_PREDICTED_SPEED * 1000) / 3600;
 
-        const distance30 = Math.min(speed30Ms * timeElapsed, total);
-        const distance25 = Math.min(speed25Ms * timeElapsed, total);
-        // console.log(distance25, distance30);
+const speed30Ms = (MAX_PREDICTED_SPEED * 1000) / 3600;
+const speed25Ms = (MIN_PREDICTED_SPEED * 1000) / 3600;
+
+console.log(speed30Ms * timeElapsed,cyclist.distanceSinceT1)
+        const distance30 = Math.min((speed30Ms * timeElapsed)+cyclist.distanceSinceT1, total);
+        const distance25 = Math.min((speed25Ms * timeElapsed)+cyclist.distanceSinceT1, total);
 
         const distanceInCurrentLap25 = Math.floor(distance25 % lapDistance);
         const distanceInCurrentLap30 = Math.floor(distance30 % lapDistance);
 
         const progress30 = Math.min(distanceInCurrentLap30 / lapDistance, 1);
         const progress25 = Math.min(distanceInCurrentLap25 / lapDistance, 1);
-        // console.log(progress25, progress30);
+        // console.log(progress25,progress30,distance25,distance30)
         const startIndex = Math.floor(progress25 * routePoints.length);
         const endIndex = Math.floor(progress30 * (routePoints.length - 1));
-
-        // console.log(distanceInCurrentLap25, distanceInCurrentLap30);
 
         if (startIndex < endIndex) {
           ctx.moveTo(pos25.x * scale, pos25.y * scale);
@@ -316,12 +313,37 @@ export default function BikeSimulation({
     const ranked = [...updated].sort(
       (a, b) => b.distanceCovered - a.distanceCovered
     );
-    const final = updated.map((cyclist) => ({
-      ...cyclist,
-      currentPosition: cyclist.hasStarted
-        ? ranked.findIndex((c) => c.id === cyclist.id) + 1
-        : 0,
-    }));
+const final = updated.map((cyclist) => {
+  // Find T1 checkpoint finished time
+  const t1Finished = cyclist.times?.find(t => t?.checkpoint.checkpoint_type.includes("t1"))?.actual_time;
+
+  // Get all bike checkpoints
+  const bikeCheckpoints = cyclist.times?.filter(t => t?.checkpoint.checkpoint_type.includes("bike"));
+  
+  // Get the last bike checkpoint
+  const lastBikeCheckpoint = bikeCheckpoints?.slice(-1)[0];
+  const lastCheckpointTime = lastBikeCheckpoint?.actual_time || null;
+
+  // Calculate time since T1
+  const timeSinceT1 = t1Finished && lastCheckpointTime
+    ? formatTimeDiff(t1Finished, lastCheckpointTime)
+    : null;
+
+  // Calculate distance since T1
+  const distanceSinceT1 = lastBikeCheckpoint?.checkpoint.distance_km
+    ? lastBikeCheckpoint.checkpoint.distance_km * 1000
+    : 0;
+
+  return {
+    ...cyclist,
+    currentPosition: cyclist.hasStarted
+      ? ranked.findIndex((c) => c.id === cyclist.id) + 1
+      : 0,
+    distanceSinceT1,
+    timeSinceT1,
+  };
+});
+
 
     setCyclists(final);
   }, [checkpointData, athletes, currentTime]);

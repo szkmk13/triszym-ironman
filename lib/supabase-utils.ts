@@ -184,6 +184,9 @@ export function formatTimeDiff(startTime:string|undefined,endTime:string|null) {
   if (endTime) {
     endDate = new Date(endTime).getTime(); 
   }
+  if (!startTime) {
+    startTime = "2025-09-06"
+  }
   const startDate = new Date(startTime).getTime(); 
   const diffMs = endDate-startDate
   const totalSeconds = Math.floor(diffMs / 1000);
@@ -196,7 +199,7 @@ export function formatTimeDiff(startTime:string|undefined,endTime:string|null) {
 }
 export function calculateBikeSpeed(
   timeStr: string | null,
-  distanceKm: number
+  distanceKm: number|undefined
 ): string {
   if (!timeStr || timeStr === "--:--:--" || !distanceKm) return "--";
 
