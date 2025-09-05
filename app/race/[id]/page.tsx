@@ -54,12 +54,12 @@ export default function RaceDetailPage() {
   };
 
   console.log(athletes[0].times[0])
-const filtered = athletes[0].times.filter(t => t?.checkpoint.checkpoint_type.includes("bike"));
+const filtered = athletes[0].times.filter((t: { checkpoint: { checkpoint_type: string | string[]; }; }) => t?.checkpoint.checkpoint_type.includes("bike"));
 const bikeStartCheckpointId = filtered[filtered.length - 1]?.checkpoint.id;
 
 
 const t1Finished =
-  athletes[0].times.find(t => t?.checkpoint.checkpoint_type.includes("t1"))?.actual_time || null;
+  athletes[0].times.find((t: { checkpoint: { checkpoint_type: string | string[]; }; }) => t?.checkpoint.checkpoint_type.includes("t1"))?.actual_time || null;
 
 console.log(t1Finished)
 
@@ -108,7 +108,6 @@ console.log(t1Finished)
             template={template}
             athletes={athletes}
             bikeStartCheckpointId={bikeStartCheckpointId}
-            t1FinishedCheckpoint={t1Finished}
             // currentBikeCheckpoint={currentBikeCheckpoint}
           />
         </>
