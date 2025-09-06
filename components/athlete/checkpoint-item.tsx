@@ -55,8 +55,8 @@ export default function CheckpointItem({
       case "swim_start":
       case "swim_finish":
         return "bg-blue-100 text-blue-800";
-      case "t1_finish":
-      case "t2_finish":
+      case "t1_finish_bike_start":
+      case "t2_finish_run_start":
         return "bg-yellow-100 text-yellow-800";
       case "bike_checkpoint":
         return "bg-orange-100 text-orange-800";
@@ -110,7 +110,7 @@ export default function CheckpointItem({
         .filter(
           (cp) =>
             cp.checkpoint_type === "run_checkpoint" ||
-            cp.checkpoint_type === "t2_finish" ||
+            cp.checkpoint_type === "t2_finish_run_start" ||
             cp.checkpoint_type === "finish"
         )
         .sort((a, b) => a.order_index - b.order_index);
@@ -122,7 +122,7 @@ export default function CheckpointItem({
         return getCheckpointTime(runCheckpoints[currentIndex - 1].id);
       } else {
         const t2FinishCheckpoint = checkpoints.find(
-          (cp) => cp.checkpoint_type === "t2_finish"
+          (cp) => cp.checkpoint_type === "t2_finish_run_start"
         );
         return t2FinishCheckpoint
           ? getCheckpointTime(t2FinishCheckpoint.id)
@@ -212,7 +212,7 @@ export default function CheckpointItem({
           .filter(
             (cp) =>
               cp.checkpoint_type === "run_checkpoint" ||
-              cp.checkpoint_type === "t2_finish" ||
+              cp.checkpoint_type === "t2_finish_run_start" ||
               cp.checkpoint_type === "finish"
           )
           .sort((a, b) => a.order_index - b.order_index);
@@ -290,10 +290,7 @@ export default function CheckpointItem({
   };
   const handleEditClickNew = () => {
     setIsEditing(true);
-    const date = new Date()
-    console.log(date)
     const currentTime = new Date().toTimeString().slice(0, 8);
-    console.log(currentTime)
     setEditValue(currentTime);
     setnewTimeInput(true)
   };

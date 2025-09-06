@@ -69,7 +69,7 @@ export default function SegmentAnalysis({
 
   const getBikeDifference = () => {
     const t1FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t1_finish")
-    const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish")
+    const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish_run_start")
     const t1Time = t1FinishCheckpoint ? getCheckpointTime(t1FinishCheckpoint.id) : null
     const t2Time = t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
 
@@ -113,7 +113,7 @@ export default function SegmentAnalysis({
       }
       case "bike": {
         const t1FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t1_finish")
-        const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish")
+        const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish_run_start")
         const t1Time = t1FinishCheckpoint ? getCheckpointTime(t1FinishCheckpoint.id) : null
         const t2Time = t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
         const actualTime = t1Time && t2Time ? calculateElapsedTime(t1Time.actual_time, t2Time.actual_time) : null
@@ -136,7 +136,7 @@ export default function SegmentAnalysis({
         }
       }
       case "run": {
-        const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish")
+        const t2FinishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "t2_finish_run_start")
         const finishCheckpoint = checkpoints.find((cp) => cp.checkpoint_type === "finish")
         const t2Time = t2FinishCheckpoint ? getCheckpointTime(t2FinishCheckpoint.id) : null
         const finishTime = finishCheckpoint ? getCheckpointTime(finishCheckpoint.id) : null

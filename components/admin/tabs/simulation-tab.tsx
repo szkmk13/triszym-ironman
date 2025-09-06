@@ -45,7 +45,7 @@ export function SimulationTab({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            Live Preview - Swimming
+            Podgląd na żywo - Pływanie
             <div className="flex gap-2">
               <Button onClick={onStartSimulation} disabled={isSimulating || !hasSwimRoute} size="sm">
                 <Play className="w-4 h-4 mr-2" />

@@ -2,11 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, Edit, Trash2, MapPin, CheckCircle } from "lucide-react";
+import { Settings, Edit, Trash2, MapPin, CheckCircle, ArrowLeft } from "lucide-react";
 import { TemplateForm } from "@/components/admin/template-form";
 import Link from "next/link";
 import { Template } from "@/lib/supabase-types";
 import { useDeleteTemplate, useTemplates } from "@/lib/queries";
+import { useRouter } from "next/navigation";
 
 export default function AdminPage() {
   const { data: templates = [], isLoading: templatesLoading } = useTemplates();
@@ -44,9 +45,15 @@ export default function AdminPage() {
     }
     await mutateDeleteTemplate.mutateAsync(templateId);
   };
+    const router = useRouter()
+  
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
+              <Button variant="ghost" onClick={() => router.push(`/`)}>
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Cofnij
+      </Button>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Settings className="h-8 w-8" />
           Template Administration

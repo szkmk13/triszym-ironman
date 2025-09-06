@@ -201,9 +201,9 @@ export default function SwimSimulation({
       <Card>
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
-            Live Preview - Swimming Checkpoint {swimStartCheckpointId}
+            Podgląd na żywo - Pływanie
             <span className="text-sm text-muted-foreground">
-              Updated: {currentTime.toLocaleTimeString()}
+              Odświeżono: {currentTime.toLocaleTimeString()}
             </span>
           </CardTitle>
         </CardHeader>
@@ -251,15 +251,15 @@ function SwimmerCard({ swimmer, template }: { swimmer: Swimmer; template: Templa
   const isFinished = progress >= 100;
 
   const status = !swimmer.hasStarted
-    ? "WAITING"
+    ? "OCZEKUJE"
     : isFinished
-    ? "FINISHED"
-    : "SWIMMING";
+    ? "SKOŃCZYŁ"
+    : "PŁYNIE";
 
   const statusColor = {
-    WAITING: "bg-orange-100 text-orange-800",
-    FINISHED: "bg-green-100 text-green-800",
-    SWIMMING: "bg-blue-100 text-blue-800",
+    OCZEKUJE: "bg-orange-100 text-orange-800",
+    SKOŃCZYŁ: "bg-green-100 text-green-800",
+    PŁYNIE: "bg-blue-100 text-blue-800",
   }[status];
 
   return (
@@ -285,16 +285,16 @@ function SwimmerCard({ swimmer, template }: { swimmer: Swimmer; template: Templa
         </div>
         <div className="text-sm">
           <div className="flex justify-between">
-            <span>Distance:</span>
+            <span>Dystans (+/-):</span>
             <span className="font-mono">{Math.round(swimmer.distanceSwum)}m</span>
           </div>
           <div className="flex justify-between">
-            <span>Progress:</span>
+            <span>Progres:</span>
             <span className="font-mono">{progress.toFixed(1)}%</span>
           </div>
           {swimmer.hasStarted && (
             <div className="flex justify-between">
-              <span>Current Pace:</span>
+              <span>Tempo:</span>
               <span className="font-mono">
                 {calculateSwimPace(
                   swimmer.predicted_swim_time,

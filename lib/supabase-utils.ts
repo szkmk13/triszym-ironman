@@ -245,7 +245,7 @@ export function calculateCheckpointPace(
       // For run checkpoints, we need to calculate pace based on run distance only
       return `(${calculateRunPace(timeStr, distanceKm)}/km)`;
     case "t1_finish":
-    case "t2_finish":
+    case "t2_finish_run_start":
       return ""; // No pace for transitions
     default:
       return "";
@@ -266,7 +266,7 @@ export function getCumulativeDistance(
       return template.swim_distance;
     case "bike_checkpoint":
       return template.swim_distance + (checkpoint.distance_km || 0);
-    case "t2_finish":
+    case "t2_finish_run_start":
       return template.swim_distance + template.bike_distance;
     case "run_checkpoint":
       return (

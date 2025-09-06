@@ -1,7 +1,11 @@
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useRef, useState } from "react";
-import { calculateBikeSpeed, durationToSeconds, formatTimeDiff } from "@/lib/supabase-utils";
+import {
+  calculateBikeSpeed,
+  durationToSeconds,
+  formatTimeDiff,
+} from "@/lib/supabase-utils";
 import { useAthleteTimeOnGivenCheckpoint } from "@/lib/queries";
 import type {
   Athlete,
@@ -20,7 +24,7 @@ interface Cyclist extends Athlete {
   hasStarted: boolean;
   currentLap: number;
   totalLaps: number;
-  distanceSinceT1: number
+  distanceSinceT1: number;
 }
 
 interface SimulationTabProps {
@@ -86,7 +90,8 @@ export default function BikeSimulation({
     //   totalDistance
     // )
     const distance = Math.min(
-      (timeElapsed / totalDuration) * totalDistance+checkpoint.distance*1000,
+      (timeElapsed / totalDuration) * totalDistance +
+        checkpoint.distance * 1000,
       totalDistance
     );
 
@@ -109,7 +114,6 @@ export default function BikeSimulation({
     checkpoint: AthleteTime | undefined
   ) => {
     if (!checkpoint?.actual_time) return null;
-    console.log(athlete,'ATHLETE')
     const startTime = new Date(checkpoint.actual_time);
     const hasStarted = currentTime >= startTime;
     if (!hasStarted) return null;
@@ -118,13 +122,15 @@ export default function BikeSimulation({
     const totalDistance = template.bike_distance * 1000; // Total distance across all laps
 
     const speedMs = (targetSpeed * 1000) / 3600;
-    const distanceAtSpeed = Math.min(speedMs * timeElapsed+athlete.distanceSinceT1, totalDistance);
+    const distanceAtSpeed = Math.min(
+      speedMs * timeElapsed + athlete.distanceSinceT1,
+      totalDistance
+    );
 
     if (distanceAtSpeed <= 0) return null;
 
     const distanceInCurrentLap = Math.floor(distanceAtSpeed % lapDistance);
     const progress = Math.min(distanceInCurrentLap / lapDistance, 1);
-    console.log(progress)
     // const progress = distanceAtSpeed / totalDistance
     const segIndex = Math.floor(progress * (routePoints.length - 1));
     const segProg = progress * (routePoints.length - 1) - segIndex;
@@ -195,7 +201,6 @@ export default function BikeSimulation({
 
     cyclists.forEach((cyclist) => {
       if (!cyclist.hasStarted) return;
-      console.log(cyclist,'CYC')
       const checkpoint = checkpointData?.find(
         (c) => c.athlete_id === Number(cyclist.id)
       );
@@ -220,13 +225,17 @@ export default function BikeSimulation({
             new Date(checkpoint?.actual_time || 0).getTime()) /
           1000;
 
+        const speed30Ms = (MAX_PREDICTED_SPEED * 1000) / 3600;
+        const speed25Ms = (MIN_PREDICTED_SPEED * 1000) / 3600;
 
-const speed30Ms = (MAX_PREDICTED_SPEED * 1000) / 3600;
-const speed25Ms = (MIN_PREDICTED_SPEED * 1000) / 3600;
-
-console.log(speed30Ms * timeElapsed,cyclist.distanceSinceT1)
-        const distance30 = Math.min((speed30Ms * timeElapsed)+cyclist.distanceSinceT1, total);
-        const distance25 = Math.min((speed25Ms * timeElapsed)+cyclist.distanceSinceT1, total);
+        const distance30 = Math.min(
+          speed30Ms * timeElapsed + cyclist.distanceSinceT1,
+          total
+        );
+        const distance25 = Math.min(
+          speed25Ms * timeElapsed + cyclist.distanceSinceT1,
+          total
+        );
 
         const distanceInCurrentLap25 = Math.floor(distance25 % lapDistance);
         const distanceInCurrentLap30 = Math.floor(distance30 % lapDistance);
@@ -313,37 +322,41 @@ console.log(speed30Ms * timeElapsed,cyclist.distanceSinceT1)
     const ranked = [...updated].sort(
       (a, b) => b.distanceCovered - a.distanceCovered
     );
-const final = updated.map((cyclist) => {
-  // Find T1 checkpoint finished time
-  const t1Finished = cyclist.times?.find(t => t?.checkpoint.checkpoint_type.includes("t1"))?.actual_time;
+    const final = updated.map((cyclist) => {
+      // Find T1 checkpoint finished time
+      const t1Finished = cyclist.times?.find((t) =>
+        t?.checkpoint.checkpoint_type.includes("t1")
+      )?.actual_time;
 
-  // Get all bike checkpoints
-  const bikeCheckpoints = cyclist.times?.filter(t => t?.checkpoint.checkpoint_type.includes("bike"));
-  
-  // Get the last bike checkpoint
-  const lastBikeCheckpoint = bikeCheckpoints?.slice(-1)[0];
-  const lastCheckpointTime = lastBikeCheckpoint?.actual_time || null;
+      // Get all bike checkpoints
+      const bikeCheckpoints = cyclist.times?.filter((t) =>
+        t?.checkpoint.checkpoint_type.includes("bike")
+      );
 
-  // Calculate time since T1
-  const timeSinceT1 = t1Finished && lastCheckpointTime
-    ? formatTimeDiff(t1Finished, lastCheckpointTime)
-    : null;
+      // Get the last bike checkpoint
+      const lastBikeCheckpoint = bikeCheckpoints?.slice(-1)[0];
+      const lastCheckpointTime = lastBikeCheckpoint?.actual_time || null;
 
-  // Calculate distance since T1
-  const distanceSinceT1 = lastBikeCheckpoint?.checkpoint.distance_km
-    ? lastBikeCheckpoint.checkpoint.distance_km * 1000
-    : 0;
+      // Calculate time since T1
+      const timeSinceT1 =
+        t1Finished && lastCheckpointTime
+          ? formatTimeDiff(t1Finished, lastCheckpointTime)
+          : null;
 
-  return {
-    ...cyclist,
-    currentPosition: cyclist.hasStarted
-      ? ranked.findIndex((c) => c.id === cyclist.id) + 1
-      : 0,
-    distanceSinceT1,
-    timeSinceT1,
-  };
-});
+      // Calculate distance since T1
+      const distanceSinceT1 = lastBikeCheckpoint?.checkpoint.distance_km
+        ? lastBikeCheckpoint.checkpoint.distance_km * 1000
+        : 0;
 
+      return {
+        ...cyclist,
+        currentPosition: cyclist.hasStarted
+          ? ranked.findIndex((c) => c.id === cyclist.id) + 1
+          : 0,
+        distanceSinceT1,
+        timeSinceT1,
+      };
+    });
 
     setCyclists(final);
   }, [checkpointData, athletes, currentTime]);
@@ -370,17 +383,17 @@ const final = updated.map((cyclist) => {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>
-            Live Preview - Biking
-            <span className="text-sm font-normal text-muted-foreground pl-2">
-              Updated:{" "}
+          <CardTitle className="flex flex-col gap-1">
+            <div>Podgląd na żywo - Rower</div>
+            <div className="text-sm font-normal text-muted-foreground pl-2">
+              Odświeżono:
               {currentTime.toLocaleTimeString("en-GB", { hour12: false })}
-            </span>
+            </div>
             {totalLaps > 1 && (
-              <span className="text-sm font-normal text-muted-foreground">
-                {" • "}
-                {totalLaps} Laps - {(lapDistance / 1000).toFixed(1)}km per lap
-              </span>
+              <div className="text-sm font-normal text-muted-foreground">
+                {totalLaps} Okrążenia - {(lapDistance / 1000).toFixed(1)}km
+                każde
+              </div>
             )}
           </CardTitle>
         </CardHeader>
@@ -398,18 +411,24 @@ const final = updated.map((cyclist) => {
                   const progress = (cyclist.distanceCovered / total) * 100;
                   const finished = progress >= 100;
 
-                  const t1Finished = cyclist.times?.find(t => t?.checkpoint.checkpoint_type.includes("t1"))?.actual_time;
-                  const filtered1 = cyclist.times?.filter(t => t?.checkpoint.checkpoint_type.includes("bike"));
-                  const lastBikeCheckpoint = filtered1?.slice(-1)[0]
-                  const lastcheckopinttime = lastBikeCheckpoint?.actual_time||null;
-                  console.log(cyclist,"CYCLIST",t1Finished,lastcheckopinttime)
-                  const timeSinceT1 = formatTimeDiff(t1Finished,lastcheckopinttime);
-                  const distanceSinceT1 = lastBikeCheckpoint?.checkpoint.distance_km
-                  console.log(timeSinceT1,distanceSinceT1)
+                  const t1Finished = cyclist.times?.find((t) =>
+                    t?.checkpoint.checkpoint_type.includes("t1")
+                  )?.actual_time;
+                  const filtered1 = cyclist.times?.filter((t) =>
+                    t?.checkpoint.checkpoint_type.includes("bike")
+                  );
+                  const lastBikeCheckpoint = filtered1?.slice(-1)[0];
+                  const lastcheckopinttime =
+                    lastBikeCheckpoint?.actual_time || null;
 
+                  const timeSinceT1 = formatTimeDiff(
+                    t1Finished,
+                    lastcheckopinttime
+                  );
+                  const distanceSinceT1 =
+                    lastBikeCheckpoint?.checkpoint.distance_km;
 
-
-return (
+                  return (
                     <Card
                       key={cyclist.id}
                       className={`${
@@ -448,7 +467,8 @@ return (
                               )}
                               {cyclist.hasStarted && (
                                 <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                                  OKRĄŻENIE {cyclist.currentLap}/{cyclist.totalLaps}
+                                  OKRĄŻENIE {cyclist.currentLap}/
+                                  {cyclist.totalLaps}
                                 </span>
                               )}
                             </div>
@@ -476,26 +496,28 @@ return (
                             </span>
                           </div>
                           {cyclist.hasStarted && (
-                            <><div className="flex justify-between">
-                              <span>Przewidziana prędkość:</span>
-                              <span className="font-mono">
-                                {calculateBikeSpeed(
-                                  cyclist.predicted_bike_time,
-                                  template.bike_distance
-                                )}{" "}
-                                km/h
-                              </span>
-                            </div>
-                                                        <div className="flex justify-between">
-                              <span>Średnia prędkość:</span>
-                              <span className="font-mono">
-                                {calculateBikeSpeed(
-                                  timeSinceT1,
-                                  distanceSinceT1
-                                )}{" "}
-                                km/h
-                              </span>
-                            </div></>
+                            <>
+                              <div className="flex justify-between">
+                                <span>Przewidziana prędkość:</span>
+                                <span className="font-mono">
+                                  {calculateBikeSpeed(
+                                    cyclist.predicted_bike_time,
+                                    template.bike_distance
+                                  )}{" "}
+                                  km/h
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Średnia prędkość:</span>
+                                <span className="font-mono">
+                                  {calculateBikeSpeed(
+                                    timeSinceT1,
+                                    distanceSinceT1
+                                  )}{" "}
+                                  km/h
+                                </span>
+                              </div>
+                            </>
                           )}
                         </div>
                         <div className="w-full bg-gray-200 h-3 rounded-full mt-3">

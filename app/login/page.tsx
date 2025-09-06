@@ -9,6 +9,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
+          
           <CardTitle>Welcome to Triathlon Calculator</CardTitle>
           <CardDescription>Sign in to manage your athletes and races</CardDescription>
         </CardHeader>

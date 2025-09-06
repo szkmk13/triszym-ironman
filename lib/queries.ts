@@ -383,7 +383,6 @@ export function useUpdateTemplateRoute() {
         .single();
 
       if (fetchError) throw fetchError;
-      console.log(current);
       // weź obiekt spod klucza
       const segment = current[segmentName];
 

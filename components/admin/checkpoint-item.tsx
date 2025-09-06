@@ -22,8 +22,8 @@ export function CheckpointItem({ checkpoint }: CheckpointItemProps) {
       case "swim_start":
       case "swim_finish":
         return "bg-blue-100 text-blue-800";
-      case "t1_finish":
-      case "t2_finish":
+      case "t1_finish_bike_start":
+      case "t2_finish_run_start":
         return "bg-yellow-100 text-yellow-800";
       case "bike_checkpoint":
         return "bg-orange-100 text-orange-800";

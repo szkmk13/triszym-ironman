@@ -52,7 +52,6 @@ export function BasicInfoTab({ template }: BasicInfoTabProps) {
   }
 
   const handleSaveTemplate = () => {
-    console.log(formData)
     const updatedTemplate = {
       ...template,
       name: formData.name,

@@ -379,10 +379,8 @@ export default function TemplateEditPage() {
     if (file) {
       setImageFiles((prev) => ({ ...prev, [currentSegment]: file }));
       const reader = new FileReader();
-      console.log(reader);
       reader.onload = (e) => {
         const img = new Image();
-        console.log(img);
         img.onload = () => {
           setMapImages((prev) => ({ ...prev, [currentSegment]: img }));
         };

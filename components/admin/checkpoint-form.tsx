@@ -23,9 +23,9 @@ export function CheckpointForm({
     const allTypes = [
       { value: "swim_start", label: "Swim Start" },
       { value: "swim_finish", label: "Swim Finish" },
-      { value: "t1_finish", label: "T1 Finish" },
+      { value: "t1_finish_bike_start", label: "T1 Finish" },
       { value: "bike_checkpoint", label: "Bike Checkpoint" },
-      { value: "t2_finish", label: "T2 Finish" },
+      { value: "t2_finish_run_start", label: "T2 Finish" },
       { value: "run_checkpoint", label: "Run Checkpoint" },
       { value: "finish", label: "Finish" },
     ];
@@ -37,8 +37,8 @@ export function CheckpointForm({
     const uniqueTypes = [
       "swim_start",
       "swim_finish",
-      "t1_finish",
-      "t2_finish",
+      "t1_finish_bike_start",
+      "t2_finish_run_start",
       "finish",
     ];
 

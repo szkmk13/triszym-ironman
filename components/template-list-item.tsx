@@ -18,7 +18,6 @@ export function TemplateListItem({ template }: TemplateListItemProps) {
     template.swim_map_url || template.bike_map_url || template.run_map_url;
   const { data: checkpoints = [] } = useCheckpoints(template.id);
 
-  console.log(template);
   return (
     <div className="flex flex-col gap-3 p-4 border rounded-xl hover:bg-gray-50 transition-colors">
       <div className="flex items-center justify-between">
