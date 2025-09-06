@@ -31,15 +31,15 @@ export default function CheckpointItem({
   checkpoints,
   getCheckpointTime,
   swimStartTimeString,
-  currentTime,
   onRecordTime,
-  isRecording,
 }: CheckpointItemProps) {
   const { user } = useAuth();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [newTimeInput,setnewTimeInput]= useState(false);
+  const [newTimeDisabled, setnewTimeDisabled] = useState(false);
   const editAthleteTimeMutation = useEditAthleteTime();
   const useDeleteAthleteTimeMutation = useDeleteAthleteTime();
   const time = getCheckpointTime(checkpoint.id);
@@ -260,13 +260,10 @@ export default function CheckpointItem({
     }
   }
 
-  const handleRecordCurrentTime = () => {
-    const now = new Date();
-    const timeString = now.toTimeString().slice(0, 8); // Gets HH:MM:SS format
-
-    // Create a proper timestamp for today
+  const handleSaveEditNew = () => {
+    setnewTimeDisabled(true)
     const today = new Date();
-    const [hours, minutes, seconds] = timeString.split(":").map(Number);
+    const [hours, minutes, seconds] = editValue.split(":").map(Number);
     const timestamp = new Date(
       today.getFullYear(),
       today.getMonth(),
@@ -278,8 +275,11 @@ export default function CheckpointItem({
 
     // Call the record time function with current time
     onRecordTime(checkpoint.id, timestamp.toISOString());
+    setIsEditing(false);
+    setEditValue("");
+    setnewTimeInput(false);
+    setnewTimeDisabled(false)
   };
-
   const handleEditClick = () => {
     if (time) {
       // Format the current time for the input (HH:MM:SS)
@@ -288,7 +288,21 @@ export default function CheckpointItem({
       setIsEditing(true);
     }
   };
+  const handleEditClickNew = () => {
+    setIsEditing(true);
+    const date = new Date()
+    console.log(date)
+    const currentTime = new Date().toTimeString().slice(0, 8);
+    console.log(currentTime)
+    setEditValue(currentTime);
+    setnewTimeInput(true)
+  };
+    const handleCancelNewEdit = () => {
+    setIsEditing(false);
+    setEditValue("");
+    setnewTimeInput(false)
 
+  };
   const handleSaveEdit = async () => {
     if (!time || !editValue.trim()) return;
 
@@ -356,6 +370,7 @@ export default function CheckpointItem({
   };
   return (
 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 sm:gap-0">
+  {/* Left side: checkpoint info */}
   <div className="flex items-center gap-4">
     {isCompleted ? (
       <CheckCircle className="h-6 w-6 text-green-600" />
@@ -371,118 +386,113 @@ export default function CheckpointItem({
     </div>
   </div>
 
+  {/* Right side: badge + actions */}
   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-    {/* Badge only visible on sm and up */}
+    {/* Badge only on sm+ */}
     <Badge className={`${getCheckpointColor(checkpoint)} hidden sm:inline-flex`}>
       {checkpoint.checkpoint_type.replace("_", " ")}
     </Badge>
 
-    {time ? (
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-        {isEditing ? (
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <Input
-              type="text"
-              placeholder="HH:MM:SS"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              className="w-full sm:w-32"
-              disabled={editAthleteTimeMutation.isPending}
-              pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
-            />
+    {/* EDIT MODE (new or existing time) */}
+    {(newTimeInput || (time && isEditing)) && (
+      <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <Input
+          type="text"
+          placeholder="HH:MM:SS"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          className="w-full sm:w-32"
+          disabled={editAthleteTimeMutation.isPending}
+          pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
+        />
+        <Button
+          size="sm"
+          onClick={newTimeInput ? handleSaveEditNew : handleSaveEdit}
+          disabled={editAthleteTimeMutation.isPending}
+          variant="default"
+        >
+          <Save className="h-4 w-4" />
+        </Button>
+        {user && (
+          <>
             <Button
               size="sm"
-              onClick={handleSaveEdit}
+              onClick={newTimeInput ? handleCancelNewEdit : handleCancelEdit}
               disabled={editAthleteTimeMutation.isPending}
-              variant="default"
+              variant="outline"
             >
-              <Save className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </Button>
-            {user ? (
-              <>
-                <Button
-                  size="sm"
-                  onClick={handleCancelEdit}
-                  disabled={editAthleteTimeMutation.isPending}
-                  variant="outline"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleDeleteTime}
-                  disabled={editAthleteTimeMutation.isPending || isDeleting}
-                  variant="destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            ) : null}
-          </div>
-        ) : (
-          <>
-            <div className="text-left sm:text-right w-full sm:w-auto">
-              <div className="font-medium">
-                {new Date(time.actual_time).toLocaleTimeString("en-GB", {
-                  hour12: false,
-                })}{" "}
-                ({elapsedTime})
-              </div>
-              <div className="text-sm text-gray-500">
-                Ten odcinek: {segmentElapsedTime} {paceInfo}
-              </div>
-            </div>
-            {user ? (
-              <div className="flex gap-1 justify-end sm:justify-start">
-                <Button
-                  size="sm"
-                  onClick={handleEditClick}
-                  variant="ghost"
-                  className="p-2"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleDeleteTime}
-                  disabled={isDeleting}
-                  variant="ghost"
-                  className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : null}
+            {!newTimeInput && (
+              <Button
+                size="sm"
+                onClick={handleDeleteTime}
+                disabled={editAthleteTimeMutation.isPending || isDeleting}
+                variant="destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </>
         )}
       </div>
-    ) : (
+    )}
+
+    {/* DISPLAY TIME (when not editing) */}
+    {time && !isEditing && (
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+        <div className="text-left sm:text-right w-full sm:w-auto">
+          <div className="font-medium">
+            {new Date(time.actual_time).toLocaleTimeString("en-GB", {
+              hour12: false,
+            })}{" "}
+            ({elapsedTime})
+          </div>
+          <div className="text-sm text-gray-500">
+            Ten odcinek: {segmentElapsedTime} {paceInfo}
+          </div>
+        </div>
+        {user && (
+          <div className="flex gap-1 justify-end sm:justify-start">
+            <Button
+              size="sm"
+              onClick={handleEditClick}
+              variant="ghost"
+              className="p-2"
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleDeleteTime}
+              disabled={isDeleting}
+              variant="ghost"
+              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* NO TIME: allow creating new input */}
+    {!time && user && !newTimeInput && (
       <div className="flex flex-wrap gap-2">
-        {user ? (
-          <>
-            <Button
-              size="sm"
-              onClick={() => onRecordTime(checkpoint.id)}
-              disabled={!currentTime || isRecording}
-              variant="outline"
-              className="flex-1 sm:flex-none"
-            >
-              {isRecording ? "Rejestruje..." : "Rejestruj czas wpisany powyżej"}
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleRecordCurrentTime}
-              disabled={isRecording}
-              className="flex-1 sm:flex-none"
-            >
-              Teraz
-            </Button>
-          </>
-        ) : null}
+        <Button
+          size="sm"
+          onClick={handleEditClickNew}
+          variant="outline"
+          className="p-2"
+          disabled={newTimeDisabled}
+        >
+          Wpisz czas
+        </Button>
       </div>
     )}
   </div>
 </div>
+
 
   );
 }

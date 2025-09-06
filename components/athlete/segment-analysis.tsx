@@ -175,7 +175,7 @@ export default function SegmentAnalysis({
           : predictedTotalTime
 
         return {
-          title: "Całkowity czas",
+          title: "Szacowany czas",
           bgColor: "bg-gray-50",
           textColor: "text-gray-800",
           accentColor: "text-gray-600",
