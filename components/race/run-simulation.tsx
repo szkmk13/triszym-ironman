@@ -227,17 +227,17 @@ export default function RunSimulation({
                             <div className="flex gap-2">
                               {finished && (
                                 <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                                  FINISHED
+                                  SKOŃCZYŁ
                                 </span>
                               )}
                               {runner.isActive && !finished && (
                                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                  RUNNING
+                                  BIEGNIE
                                 </span>
                               )}
                               {!runner.hasStarted && (
                                 <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                                  WAITING
+                                  OCZEKUJE
                                 </span>
                               )}
                             </div>
@@ -245,7 +245,7 @@ export default function RunSimulation({
                         </div>
                         <div className="text-sm space-y-1">
                           <div className="flex justify-between">
-                            <span>Distance:</span>
+                            <span>Dystans:</span>
                             <span className="font-mono">
                               {Math.round(runner.distanceCovered)}m
                             </span>

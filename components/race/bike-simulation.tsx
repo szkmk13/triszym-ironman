@@ -433,22 +433,22 @@ return (
                             <div className="flex gap-2">
                               {finished && (
                                 <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                                  FINISHED
+                                  SKOŃCZYŁ
                                 </span>
                               )}
                               {cyclist.isActive && !finished && (
                                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                  CYCLING
+                                  JEDZIE
                                 </span>
                               )}
                               {!cyclist.hasStarted && (
                                 <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                                  WAITING
+                                  CZEKA
                                 </span>
                               )}
                               {cyclist.hasStarted && (
                                 <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
-                                  LAP {cyclist.currentLap}/{cyclist.totalLaps}
+                                  OKRĄŻENIE {cyclist.currentLap}/{cyclist.totalLaps}
                                 </span>
                               )}
                             </div>
@@ -514,7 +514,7 @@ return (
             </div>
             {cyclists.length === 0 && !isLoading && (
               <div className="text-center text-muted-foreground py-8">
-                No athlete data found for this checkpoint.
+                Brak sportowców na tym odcinku.
               </div>
             )}
           </div>
