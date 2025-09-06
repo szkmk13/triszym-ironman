@@ -67,7 +67,7 @@ export default function AthleteDetailPage() {
   if (athleteLoading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center">Loading athlete data...</div>
+        <div className="text-center">Ładowanie danych zawodnika...</div>
       </div>
     )
   }

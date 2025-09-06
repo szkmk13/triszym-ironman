@@ -20,7 +20,7 @@ export default function TimeRecorder({ currentTime, setCurrentTime }: TimeRecord
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Record Time</CardTitle>
+        <CardTitle>Rejestruj czas</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex gap-2">
@@ -33,10 +33,10 @@ export default function TimeRecorder({ currentTime, setCurrentTime }: TimeRecord
           />
           <Button onClick={handleSetCurrentTime} variant="outline">
             <Play className="h-4 w-4 mr-2" />
-            Now
+            Teraz
           </Button>
         </div>
-        <p className="text-xs text-gray-500 mt-1">Enter time in HH:MM:SS format or click &quot;Now&quot; for current time</p>
+        <p className="text-xs text-gray-500 mt-1">Wpisz czas w formacie HH:MM:SS lub naciśnij &quot;Teraz&quot; żeby wpisać akutalny czas. Następnie zjedź niżej i kliknij &quot;rejestruj&quot; aby przypisać ten czas do checkpointu</p>
       </CardContent>
     </Card>
   )

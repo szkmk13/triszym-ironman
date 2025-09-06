@@ -24,7 +24,7 @@ export default function CheckpointsList({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Race Progress</CardTitle>
+        <CardTitle>Progres zawodów</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">

@@ -36,8 +36,8 @@ export default function BikeSimulation({
   athletes,
   bikeStartCheckpointId,
 }: SimulationTabProps) {
-  const MAX_PREDICTED_SPEED = 100;
-  const MIN_PREDICTED_SPEED = 80;
+  const MAX_PREDICTED_SPEED = 30;
+  const MIN_PREDICTED_SPEED = 25;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [cyclists, setCyclists] = useState<Cyclist[]>([]);

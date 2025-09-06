@@ -18,8 +18,8 @@ interface CheckpointItemProps {
   checkpoint: TemplateCheckpoint;
   athlete: Athlete;
   checkpoints: TemplateCheckpoint[];
-  getCheckpointTime: (id: number) => AthleteTime|undefined
-  swimStartTimeString: string|undefined;
+  getCheckpointTime: (id: number) => AthleteTime | undefined;
+  swimStartTimeString: string | undefined;
   currentTime: string;
   onRecordTime: (checkpointId: number, timeString?: string) => void;
   isRecording: boolean;
@@ -355,134 +355,134 @@ export default function CheckpointItem({
     }
   };
   return (
-    <div className="flex items-center justify-between p-4 border rounded-lg">
-      <div className="flex items-center gap-4">
-        {isCompleted ? (
-          <CheckCircle className="h-6 w-6 text-green-600" />
-        ) : (
-          <div className="h-6 w-6 border-2 border-gray-300 rounded-full" />
-        )}
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-4 sm:gap-0">
+  <div className="flex items-center gap-4">
+    {isCompleted ? (
+      <CheckCircle className="h-6 w-6 text-green-600" />
+    ) : (
+      <div className="h-6 w-6 border-2 border-gray-300 rounded-full" />
+    )}
 
-        <div>
-          <div className="font-semibold">{checkpoint.name}</div>
-          {checkpoint.distance_km && (
-            <div className="text-sm text-gray-500">
-              {checkpoint.distance_km}km
-            </div>
-          )}
-        </div>
-      </div>
+    <div>
+      <div className="font-semibold break-words">{checkpoint.name}</div>
+      {checkpoint.distance_km && (
+        <div className="text-sm text-gray-500">{checkpoint.distance_km}km</div>
+      )}
+    </div>
+  </div>
 
-      <div className="flex items-center gap-4">
-        <Badge className={getCheckpointColor(checkpoint)}>
-          {checkpoint.checkpoint_type.replace("_", " ")}
-        </Badge>
+  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+    {/* Badge only visible on sm and up */}
+    <Badge className={`${getCheckpointColor(checkpoint)} hidden sm:inline-flex`}>
+      {checkpoint.checkpoint_type.replace("_", " ")}
+    </Badge>
 
-        {time ? (
-          <div className="flex items-center gap-2">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="text"
-                  placeholder="HH:MM:SS"
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  className="w-32"
-                  disabled={editAthleteTimeMutation.isPending}
-                  pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
-                />
-                <Button
-                  size="sm"
-                  onClick={handleSaveEdit}
-                  disabled={editAthleteTimeMutation.isPending}
-                  variant="default"
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-                {user ? (
-                  <>
-                    <Button
-                      size="sm"
-                      onClick={handleCancelEdit}
-                      disabled={editAthleteTimeMutation.isPending}
-                      variant="outline"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleDeleteTime}
-                      disabled={editAthleteTimeMutation.isPending || isDeleting}
-                      variant="destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                ) : null}
-              </div>
-            ) : (
-              <>
-                <div className="text-right">
-                  <div className="font-medium">
-                    {new Date(time.actual_time).toLocaleTimeString("en-GB", {
-                      hour12: false,
-                    })}{" "}
-                    ({elapsedTime})
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    This segment: {segmentElapsedTime} {paceInfo}
-                  </div>
-                </div>
-                {user ? (
-
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    onClick={handleEditClick}
-                    variant="ghost"
-                    className="p-2"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleDeleteTime}
-                    disabled={isDeleting}
-                    variant="ghost"
-                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                ) : null}
-
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="flex gap-2">
+    {time ? (
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+        {isEditing ? (
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <Input
+              type="text"
+              placeholder="HH:MM:SS"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              className="w-full sm:w-32"
+              disabled={editAthleteTimeMutation.isPending}
+              pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
+            />
+            <Button
+              size="sm"
+              onClick={handleSaveEdit}
+              disabled={editAthleteTimeMutation.isPending}
+              variant="default"
+            >
+              <Save className="h-4 w-4" />
+            </Button>
             {user ? (
               <>
                 <Button
                   size="sm"
-                  onClick={() => onRecordTime(checkpoint.id)}
-                  disabled={!currentTime || isRecording}
+                  onClick={handleCancelEdit}
+                  disabled={editAthleteTimeMutation.isPending}
                   variant="outline"
                 >
-                  {isRecording ? "Recording..." : "Record"}
+                  <X className="h-4 w-4" />
                 </Button>
                 <Button
                   size="sm"
-                  onClick={handleRecordCurrentTime}
-                  disabled={isRecording}
+                  onClick={handleDeleteTime}
+                  disabled={editAthleteTimeMutation.isPending || isDeleting}
+                  variant="destructive"
                 >
-                  Now
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </>
             ) : null}
           </div>
+        ) : (
+          <>
+            <div className="text-left sm:text-right w-full sm:w-auto">
+              <div className="font-medium">
+                {new Date(time.actual_time).toLocaleTimeString("en-GB", {
+                  hour12: false,
+                })}{" "}
+                ({elapsedTime})
+              </div>
+              <div className="text-sm text-gray-500">
+                Ten odcinek: {segmentElapsedTime} {paceInfo}
+              </div>
+            </div>
+            {user ? (
+              <div className="flex gap-1 justify-end sm:justify-start">
+                <Button
+                  size="sm"
+                  onClick={handleEditClick}
+                  variant="ghost"
+                  className="p-2"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleDeleteTime}
+                  disabled={isDeleting}
+                  variant="ghost"
+                  className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : null}
+          </>
         )}
       </div>
-    </div>
+    ) : (
+      <div className="flex flex-wrap gap-2">
+        {user ? (
+          <>
+            <Button
+              size="sm"
+              onClick={() => onRecordTime(checkpoint.id)}
+              disabled={!currentTime || isRecording}
+              variant="outline"
+              className="flex-1 sm:flex-none"
+            >
+              {isRecording ? "Rejestruje..." : "Rejestruj czas wpisany powyżej"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleRecordCurrentTime}
+              disabled={isRecording}
+              className="flex-1 sm:flex-none"
+            >
+              Teraz
+            </Button>
+          </>
+        ) : null}
+      </div>
+    )}
+  </div>
+</div>
+
   );
 }

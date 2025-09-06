@@ -34,7 +34,7 @@ export default function AthleteHeader({
               <span>•</span>
               <Clock className="h-4 w-4" />
               <span>
-                Started:{" "}
+                Wystartował:{" "}
                 {new Date(swimStartTimeString).toLocaleTimeString(
                   "en-GB",
                   { hour12: false }

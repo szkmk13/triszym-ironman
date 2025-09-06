@@ -97,7 +97,7 @@ export default function SegmentAnalysis({
             : null
 
         return {
-          title: "Swim",
+          title: "Pływaie",
           bgColor: "bg-blue-50",
           textColor: "text-blue-800",
           accentColor: "text-blue-600",
@@ -121,7 +121,7 @@ export default function SegmentAnalysis({
           t2Time && swimStartTimeString ? calculateElapsedTime(swimStartTimeString, t2Time.actual_time) : null
 
         return {
-          title: "Bike",
+          title: "Rower",
           bgColor: "bg-orange-50",
           textColor: "text-orange-800",
           accentColor: "text-orange-600",
@@ -146,7 +146,7 @@ export default function SegmentAnalysis({
           finishTime && swimStartTimeString ? calculateElapsedTime(swimStartTimeString, finishTime.actual_time) : null
 
         return {
-          title: "Run",
+          title: "Bieg",
           bgColor: "bg-red-50",
           textColor: "text-red-800",
           accentColor: "text-red-600",
@@ -175,12 +175,12 @@ export default function SegmentAnalysis({
           : predictedTotalTime
 
         return {
-          title: "Total Time",
+          title: "Całkowity czas",
           bgColor: "bg-gray-50",
           textColor: "text-gray-800",
           accentColor: "text-gray-600",
           borderColor: "border-gray-200",
-          predicted: adjustedTotalPredicted + (estimatedFinishTime ? ` (Est. finish: ${estimatedFinishTime})` : ""),
+          predicted: adjustedTotalPredicted + (estimatedFinishTime ? ` \n\n(na mecie: ${estimatedFinishTime})` : ""),
           actual: actualTime || "--:--:--",
           totalElapsed: null,
           predictedTime: adjustedTotalPredicted,
@@ -203,22 +203,22 @@ export default function SegmentAnalysis({
       </div>
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <span className={`text-sm ${segmentData.textColor.replace("800", "700")}`}>Predicted:</span>
+          <span className={`text-sm ${segmentData.textColor.replace("800", "700")}`}>Szacowany:</span>
           <span className={`font-medium ${segmentData.accentColor}`}>{segmentData.predicted}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className={`text-sm ${segmentData.textColor.replace("800", "700")}`}>Actual:</span>
+          <span className={`text-sm ${segmentData.textColor.replace("800", "700")}`}>Rzeczywisty:</span>
           <span className={`font-medium ${segmentData.accentColor}`}>{segmentData.actual}</span>
         </div>
         {segmentData.totalElapsed && (
           <div className="flex justify-between items-center">
-            <span className={`text-sm ${segmentData.textColor.replace("800", "700")}`}>Total Elapsed:</span>
+            <span className={`text-sm ${segmentData.textColor.replace("800", "700")}`}>Minęło:</span>
             <span className={`font-medium ${segmentData.accentColor}`}>{segmentData.totalElapsed}</span>
           </div>
         )}
         {segmentData.actualTime && segmentData.predictedTime && (
           <div className={`flex justify-between items-center pt-2 border-t ${segmentData.borderColor}`}>
-            <span className={`text-sm ${segmentData.textColor.replace("800", "700")}`}>Difference:</span>
+            <span className={`text-sm ${segmentData.textColor.replace("800", "700")}`}>Różnica:</span>
             <span className={`font-bold ${getTimeDifferenceColor(segmentData.predictedTime, segmentData.actualTime)}`}>
               {getTimeDifference(segmentData.predictedTime, segmentData.actualTime)}
             </span>
@@ -227,7 +227,7 @@ export default function SegmentAnalysis({
       </div>
       {type === "total" && segmentData.totalDiff !== 0 && (
         <div className="mt-2 text-xs text-gray-600">
-          * Predicted total time adjusted based on swim and bike performance
+          * Przewidywany całkowity czas obliczony po pływaniu i rowerze
         </div>
       )}
     </div>
