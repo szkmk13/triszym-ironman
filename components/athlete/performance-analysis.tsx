@@ -68,7 +68,7 @@ export default function PerformanceAnalysis({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Performance Analysis</CardTitle>
+        <CardTitle>Założenia</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

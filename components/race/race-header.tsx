@@ -17,7 +17,7 @@ export default function RaceHeader({
     <div className="flex items-center gap-4">
       <Button variant="ghost" onClick={onBack}>
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back
+        Cofnij
       </Button>
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">

@@ -97,7 +97,7 @@ export default function SegmentAnalysis({
             : null
 
         return {
-          title: "Pływaie",
+          title: "Pływanie",
           bgColor: "bg-blue-50",
           textColor: "text-blue-800",
           accentColor: "text-blue-600",

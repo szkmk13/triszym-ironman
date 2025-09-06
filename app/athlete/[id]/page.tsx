@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useAthlete, useCheckpoints, useAthleteTimes, useRecordTime } from "@/lib/queries"
 import AthleteHeader from "@/components/athlete/athlete-header"
 import PerformanceAnalysis from "@/components/athlete/performance-analysis"
-import TimeRecorder from "@/components/athlete/time-recorder"
+// import TimeRecorder from "@/components/athlete/time-recorder"
 import CheckpointsList from "@/components/athlete/checkpoints-list"
 
 export default function AthleteDetailPage() {
@@ -94,10 +94,10 @@ export default function AthleteDetailPage() {
         swimStartTimeString={swimStartTimeString}
       />
 
-      <TimeRecorder
+      {/* <TimeRecorder
         currentTime={currentTime}
         setCurrentTime={setCurrentTime}
-      />
+      /> */}
 
       <CheckpointsList
         checkpoints={checkpoints}
