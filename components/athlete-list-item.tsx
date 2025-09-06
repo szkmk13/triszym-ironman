@@ -53,8 +53,8 @@ export function AthleteListItem({ athlete }: AthleteListItemProps) {
   const swimStartTime = getSwimStartTime();
 
   return (
-    <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-      <div className="flex-1 space-y-2">
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors">
+      <div className="flex-1 space-y-2 w-full">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <Trophy className="h-4 w-4 text-gray-500" />
@@ -74,7 +74,9 @@ export function AthleteListItem({ athlete }: AthleteListItemProps) {
               <span>
                 {new Date(swimStartTime.actual_time).toLocaleTimeString(
                   "en-GB",
-                  { hour12: false }
+                  {
+                    hour12: false,
+                  }
                 )}
               </span>
             </div>
@@ -92,13 +94,27 @@ export function AthleteListItem({ athlete }: AthleteListItemProps) {
             {stats.completed}/{stats.total}
           </span>
         </div>
+
+        {/* Button goes below progress bar on mobile */}
+        <div className="mt-3 md:hidden">
+          <Link href={`/athlete/${athlete.id}`}>
+            <Button variant="outline" size="sm" className="w-full">
+              SZCZEGÓŁOWE WYNIKI
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <Link href={`/athlete/${athlete.id}`}>
-        <Button variant="ghost" size="sm" className="ml-4">
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </Link>
+      {/* Desktop version (still on the right) */}
+      <div className="hidden md:block ml-4">
+        <Link href={`/athlete/${athlete.id}`}>
+          <Button variant="outline" size="sm">
+            KLIKNIJ TUTAJ ABY ZOBACZYĆ SZCZEGÓŁOWE WYNIKI
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

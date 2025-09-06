@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Athlete } from "@/lib/supabase-types";
-import { ArrowLeft, Trophy, MapPin } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface AthleteHeaderProps {
@@ -22,12 +22,9 @@ export default function RaceHeader({
       </Button>
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Trophy className="h-8 w-8" />
           {template.name}
         </h1>
         <div className="flex items-center gap-2 text-gray-600">
-          <MapPin className="h-4 w-4" />
-          <span>{template.template?.name}</span>
           {/* {swimStartTime && (
             <>
               <span>•</span>
